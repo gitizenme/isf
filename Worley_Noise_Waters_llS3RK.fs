@@ -1,10 +1,13 @@
 /*{
     "CATEGORIES": [
+        "Noise",
+        "Worley",
+        "Fluid",
         "Automatically Converted",
         "Shadertoy"
     ],
     "CREDIT": "Automatically converted from https://www.shadertoy.com/view/llS3RK by Kyle273.  A simple Worley noise shader. Full tutorial at ibreakdownshaders.blogspot.com. Original shader from  http://glslsandbox.com/e#23237.0",
-    "DESCRIPTION": "Worley Noise Waters",
+    "DESCRIPTION": "Worley Noise",
     "IMPORTED": {
     },
     "INPUTS": [
@@ -73,19 +76,75 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 30000,
-            "LABEL": "luminance",
-            "MAX": 1000000,
+            "DEFAULT": 4.0,
+            "LABEL": "Luminance A",
+            "MAX": 100,
             "MIN": 1,
-            "NAME": "lum",
+            "NAME": "lumA",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 2.5,
+            "LABEL": "Luminance B",
+            "MAX": 100,
+            "MIN": 1,
+            "NAME": "lumB",
             "TYPE": "float"
         },
         {
             "DEFAULT": 1500.0,
-            "LABEL": "Intensity",
+            "LABEL": "Scale",
             "MAX": 10000,
-            "MIN": 10,
-            "NAME": "intensity",
+            "MIN": 100,
+            "NAME": "scale",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.05,
+            "LABEL": "Layer 1 Time",
+            "MAX": 5,
+            "MIN": -5,
+            "NAME": "layer1Time",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": -0.1,
+            "LABEL": "Layer 2 Time",
+            "MAX": 5,
+            "MIN": -5,
+            "NAME": "layer2Time",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.03,
+            "LABEL": "Layer 3 Time",
+            "MAX": 5,
+            "MIN": -5,
+            "NAME": "layer3Time",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 5.0,
+            "LABEL": "Layer 1 Noise",
+            "MAX": 100,
+            "MIN": -100,
+            "NAME": "layer1Noise",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 50.0,
+            "LABEL": "Layer 2 Noise",
+            "MAX": 100,
+            "MIN": -100,
+            "NAME": "layer2Noise",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": -10.0,
+            "LABEL": "Layer 3 Noise",
+            "MAX": 100,
+            "MIN": -100,
+            "NAME": "layer3Noise",
             "TYPE": "float"
         }
     ],
@@ -101,13 +160,12 @@ float length2(vec2 p){
 
 //Generate some noise to scatter points.
 float noise(vec2 p){
-//	return fract(sin(fract(sin(p.x) * (43.13311)) + p.y) * 31.0011);
 	return fract(sin(fract(sin(p.x) * (noiseA)) + p.y) * noiseB);
 }
 
 float worley(vec2 p) {
     //Set our distance to infinity
-	float d = lum;
+	float d = lumA;
     //For the 9 surrounding grid points
 	for (int xo = -1; xo <= 1; ++xo) {
 		for (int yo = -1; yo <= 1; ++yo) {
@@ -118,22 +176,24 @@ float worley(vec2 p) {
 			d = min(d, length2(p - tp - noise(tp)));
 		}
 	}
-//	return 3.0*exp(-4.0*abs(2.5*d - 1.0));
-	return lum*exp(-4.0*abs(2.5*d - 1.0));
+	return lumA*exp(-4.0*abs(lumB*d - 1.0));
 }
 
 float fworley(vec2 p) {
     //Stack noise layers 
-	return sqrt(sqrt(sqrt(
-		worley(p*5.0 + 0.05*TIME) *
-		sqrt(worley(p * 50.0 + 0.12 + -0.1*TIME)) *
-		sqrt(sqrt(worley(p * -10.0 + 0.03*TIME))))));
+    float layer1 = worley(p * layer1Noise + layer1Time*TIME);
+    float layer2 = sqrt(worley(p * layer2Noise + 0.12 + layer2Time*TIME));
+    float layer3 = sqrt(sqrt(worley(p * layer3Noise + layer3Time*TIME)));
+
+    float layers = sqrt(layer1 * layer2 * layer3 );
+	
+    return sqrt(sqrt(layers));
 }
       
 void main() {
 	vec2 uv = gl_FragCoord.xy / RENDERSIZE.xy;
     //Calculate an intensity
-    float t = fworley(uv * RENDERSIZE.xy / intensity);
+    float t = fworley(uv * RENDERSIZE.xy / scale);
     //Add some gradient
     t*=exp(-length2(abs(gradientA*uv - gradientB)));	
     //Make it blue!
