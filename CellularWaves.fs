@@ -7,7 +7,7 @@
         "Shadertoy"
     ],
     "CREDIT": "Automatically converted from https://www.shadertoy.com/view/llS3RK by Kyle273.  A simple Worley noise shader. Full tutorial at ibreakdownshaders.blogspot.com. Original shader from  http://glslsandbox.com/e#23237.0",
-    "DESCRIPTION": "Worley Noise",
+    "DESCRIPTION": "Cellular Waves",
     "IMPORTED": {
     },
     "INPUTS": [
@@ -195,9 +195,7 @@ void main() {
     //Calculate an intensity
     float t = fworley(uv * RENDERSIZE.xy / scale);
     //Add some gradient
-    t*=exp(-length2(abs(gradientA*uv - gradientB)));	
-    //Make it blue!
-//    gl_FragColor = vec4(t * vec3(r, g*t, pow(t, b-t)), a);
+    t *= exp(-length2(abs(gradientA*uv - gradientB)));	
     gl_FragColor = vec4(t * vec3(r, g, b), a);
 }
 
