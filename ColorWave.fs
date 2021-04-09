@@ -42,7 +42,8 @@ void main()
     p.y += cos(TIME/4.+mouse.y)*5.;
     p.x += sin(TIME/3.+mouse.x)*4.;
     
-    vec3 col=vec3(abs(sin(3.0*p.x))*1.3,  abs(sin(1.5*p.y))+0.3, abs(sin(1.0*p.x+p.y))+0.3);
+    // vec3 col=vec3(abs(sin(3.0*p.x))*1.3,  abs(sin(1.5*p.y))+0.3, abs(sin(1.0*p.x+p.y))+0.3);
+    vec3 col=vec3(abs(sin(3.0*p.x))*1.3,  abs(sin(1.5*p.y))+0.0, abs(sin(1.0*p.x+p.y))+0.3);
     float dist = sqrt(col.x*col.x + col.y * col.y + col.z*col.z);
     gl_FragColor=vec4(col/dist, 1.0);
 }
