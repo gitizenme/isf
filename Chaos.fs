@@ -1,9 +1,10 @@
 /*{
     "CATEGORIES": [
-        "Automatically Converted",
-        "Shadertoy"
+        "Chaos",
+        "Symbol"
     ],
-    "DESCRIPTION": "Automatically converted from https://www.shadertoy.com/view/XdccD4 by lsdlive.  Still training my geometry.\nI tried a better lighting setup for this one. I found this shader from vgs ( https://www.shadertoy.com/view/4slSD8) best fits what I need, it's simple & very efficient, so I reimplemented this setup in my shader.",
+    "CREDIT": "Chaos.of.Zen",
+    "DESCRIPTION": "Shader of the symbol for Chaos",
     "IMPORTED": {
     },
     "ISFVSN": "2"
