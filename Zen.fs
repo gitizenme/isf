@@ -19,34 +19,49 @@
 #define SECONDS 6.0
 #define COUNT 32
 
-vec2 random2(vec2 uv)
-{
+#define initialAngle 3.14159265359
+
+#define pulse false
+#define rotation false
+#define shineMovement true
+
+vec2 randomNoise(vec2 uv)
+{    
     uv = vec2( dot(uv,vec2(127.1,311.7)),
               dot(uv,vec2(29.5,183.3)) );
-    return -1.0 + 2.0*fract(sin(uv)*43758.5453123);
+    if(shineMovement)
+        return -1.0 + 2.0*fract(sin(uv)*43758.5453123);
+    else
+        return -1.0 + 2.0*fract(uv*43758.5453123);
 }
 
-float random(vec2 uv)
+float randomVignette(vec2 uv)
 {
-    return fract(sin(dot(uv.yx,vec2(14.7891,43.123)))*312991.41235);
+    if(shineMovement)
+        return fract(sin(dot(uv.yx,vec2(14.7891,43.123)))*312991.41235);
+    else
+        return fract(dot(uv.yx,vec2(14.7891,43.123))*312991.41235);
 }
 
-float random (in float x)
+float randomMovement(in float x)
 {
-    return fract(sin(x)*43758.5453123);
+    if(shineMovement)
+        return fract(sin(x)*43758.5453123);
+    else
+        return fract(x*43758.5453123);
 }
 
-// iq
-float v_noise(vec2 uv) {
+
+float vignetteNoise(vec2 uv) {
     vec2 i = floor(uv);
     vec2 f = fract(uv);
 
     vec2 u = f*f*(3.0-2.0*f);
 
-    return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
-                     dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
-                mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
-                     dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+    return mix( mix( dot( randomNoise(i + vec2(0.0,0.0)), f - vec2(0.0,0.0) ),
+                     dot( randomNoise(i + vec2(1.0,0.0)), f - vec2(1.0,0.0) ), u.x),
+                mix( dot( randomNoise(i + vec2(0.0,1.0)), f - vec2(0.0,1.0) ),
+                     dot( randomNoise(i + vec2(1.0,1.0)), f - vec2(1.0,1.0) ), u.x), u.y);
 }
 
 mat2 rotate(float angle)
@@ -85,31 +100,41 @@ float scene(vec2 uv, vec3 t)
 
     float n_scale = 0.12;
 
-    float n_1 = v_noise(uv + sin(PI*t.x)) * n_scale;
-    float n_2 = v_noise(uv+seed - sin(PI*t.x)) * n_scale;
+    float n_1 = vignetteNoise(uv + PI) * n_scale;
+    float n_2 = vignetteNoise(uv+seed - PI) * n_scale;
+    if(rotation) {
+        float n_1 = vignetteNoise(uv + sin(PI*t.x)) * n_scale;
+        float n_2 = vignetteNoise(uv+seed - sin(PI*t.x)) * n_scale;
+    }
 
     float d = 1.0;
     for(int i = 1; i <= COUNT; i++)
     {
         float spread = 1.0 / float(i);
         float speed = ceil(3.0*spread);
-        float r = random(float(i)*5.0 + seed);
+        float r = randomMovement(float(i)*5.0 + seed);
         float r_scalar = r * 2.0 - 1.0;
 
         vec2 pos = uv - vec2(0.0);
+
+        pos *= rotate(initialAngle);
+
+        if(rotation) {
             pos += vec2(0.01) * rotate(TWO_PI * r_scalar + TWO_PI * t.x * speed * sign(r_scalar));
-            pos *= rotate(TWO_PI * r_scalar + TWO_PI * t.x * speed * sign(r_scalar) + v_noise(pos + float(i) + TIME) );
+            pos *= rotate(TWO_PI * r_scalar + TWO_PI * t.x * speed * sign(r_scalar) + vignetteNoise(pos + float(i) + TIME) );
             pos += mix(n_1,n_2,0.5+0.5*sin(TWO_PI*t.x*speed));
+            pos *= rotate(TWO_PI * r_scalar + TWO_PI * t.x * speed * sign(r_scalar) + vignetteNoise(pos + float(i) + TIME) );
+        }
 
         float s = .45 + .126 * r;
 
         float a = atan(pos.y,pos.x)/PI;
-            a = abs(a);
-            a = smoothstep(0.0,1.0,a);
+        a = abs(a);
+        a = smoothstep(0.0,1.0,a);
 
         float c = length(pos);
-            c = abs(c-s);
-            c -= 0.0004 + .0125 * a;
+        c = abs(c-s);
+        c -= 0.0004 + .0125 * a;
 
         d = min(d,c);
     }
@@ -124,7 +149,11 @@ void main() {
     vec2 uv = gl_FragCoord.xy/RENDERSIZE.xy;
     uv = center( uv );
     uv = uv * 2.0 - 1.0;
-    uv = uv * (1.0 + .03 * sin(TWO_PI*t.x));
+
+    if(pulse) 
+        uv = uv * (1.0 + .03 * sin(TWO_PI*t.x));
+
+    uv = uv * (1.0 + .03 * TWO_PI);
     uv = uv * 0.5 + 0.5;
     // scene
     float s = scene(uv, t);
@@ -139,10 +168,10 @@ void main() {
         
     // vignette
     float size = length(uv-.5)-1.33;
-    float vignette = (size) * 0.75 + random(uv) *.08;        
+    float vignette = (size) * 0.75 + randomVignette(uv) *.08;        
     color = mix(color,vec3(0.0, 0.0, 0.0),vignette+.5);
 	
-    float d = v_noise(uv*7.0+TIME*0.25);
+    float d = vignetteNoise(uv*7.0+TIME*0.25);
     
     gl_FragColor = vec4(color,mix(.25,.25+.75*d,1.0-smoothstep(-aa,aa,s)));
 }
