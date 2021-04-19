@@ -7,6 +7,50 @@
     "DESCRIPTION": "Enso/Zen symbol",
     "IMPORTED": {
     },
+    "INPUTS": [
+        {
+            "DEFAULT": false,
+            "LABEL": "pulse",
+            "NAME": "pulse",
+            "TYPE": "bool"
+        },
+        {
+            "DEFAULT": false,
+            "LABEL": "rotation",
+            "NAME": "rotation",
+            "TYPE": "bool"
+        },
+        {
+            "DEFAULT": 3.14,
+            "LABEL": "initialAngle",
+            "MAX": 6.28,
+            "MIN": 0,
+            "NAME": "initialAngle",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": [
+                0,
+                0,
+                0,
+                1
+            ],
+            "LABEL": "symbolColor",
+            "NAME": "symbolColor",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "LABEL": "backgroundColor",
+            "NAME": "backgroundColor",
+            "TYPE": "color"
+        }
+    ],
     "ISFVSN": "2"
 }
 */
@@ -19,36 +63,26 @@
 #define SECONDS 6.0
 #define COUNT 32
 
-#define initialAngle 3.14159265359
+// #define initialAngle PI
 
-#define pulse false
-#define rotation false
-#define shineMovement true
+// #define pulse true
+// #define rotation true
 
 vec2 randomNoise(vec2 uv)
 {    
     uv = vec2( dot(uv,vec2(127.1,311.7)),
               dot(uv,vec2(29.5,183.3)) );
-    if(shineMovement)
-        return -1.0 + 2.0*fract(sin(uv)*43758.5453123);
-    else
-        return -1.0 + 2.0*fract(uv*43758.5453123);
+    return -1.0 + 2.0*fract(sin(uv)*43758.5453123);
 }
 
 float randomVignette(vec2 uv)
 {
-    if(shineMovement)
-        return fract(sin(dot(uv.yx,vec2(14.7891,43.123)))*312991.41235);
-    else
-        return fract(dot(uv.yx,vec2(14.7891,43.123))*312991.41235);
+    return fract(sin(dot(uv.yx,vec2(14.7891,43.123)))*312991.41235);
 }
 
 float randomMovement(in float x)
 {
-    if(shineMovement)
-        return fract(sin(x)*43758.5453123);
-    else
-        return fract(x*43758.5453123);
+    return fract(sin(x)*43758.5453123);
 }
 
 
@@ -150,10 +184,12 @@ void main() {
     uv = center( uv );
     uv = uv * 2.0 - 1.0;
 
+    float size = 0.5;
     if(pulse) 
         uv = uv * (1.0 + .03 * sin(TWO_PI*t.x));
+    else
+        uv = uv * (1.0 + .03 * TWO_PI*size);
 
-    uv = uv * (1.0 + .03 * TWO_PI);
     uv = uv * 0.5 + 0.5;
     // scene
     float s = scene(uv, t);
@@ -161,18 +197,24 @@ void main() {
     float pixelSmoothing = 2.0;
     float aa = ratio(RENDERSIZE.xy).x/RENDERSIZE.x*pixelSmoothing;
     
+    // symbol color
+    vec3 color = vec3(symbolColor);
+
+    // color = mix(color,vec3(0., 0., 1.0),1.0-smoothstep(-aa,aa,s));
+
     // background color
-    vec3 color = vec3(0.08, 0., 0.);
-    color = mix(color,vec3(1.0),1.0-smoothstep(-aa,aa,s));
-    color = 1.0 - color;
+    color = mix(color,vec3(backgroundColor),smoothstep(-aa,aa,s));
+
+    // invert
+    // color = 1.0 - color;
         
     // vignette
-    float size = length(uv-.5)-1.33;
-    float vignette = (size) * 0.75 + randomVignette(uv) *.08;        
-    color = mix(color,vec3(0.0, 0.0, 0.0),vignette+.5);
-	
-    float d = vignetteNoise(uv*7.0+TIME*0.25);
-    
-    gl_FragColor = vec4(color,mix(.25,.25+.75*d,1.0-smoothstep(-aa,aa,s)));
+    // float size = length(uv-.5)-1.33;
+    // float vignette = (size) * 0.75 + randomVignette(uv) *.08;        
+    // color = mix(color,vec3(0.0, 0.0, 0.0),vignette+.5);
+	// float d = vignetteNoise(uv*7.0+TIME*0.25);  
+    // gl_FragColor = vec4(color,mix(.25,.25+.75*d,1.0-smoothstep(-aa,aa,s)));
+
+    gl_FragColor = vec4(color,1.0);
 }
 
