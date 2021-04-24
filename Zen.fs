@@ -15,17 +15,33 @@
             "TYPE": "bool"
         },
         {
-            "DEFAULT": false,
+            "DEFAULT": true,
             "LABEL": "rotation",
             "NAME": "rotation",
             "TYPE": "bool"
         },
         {
+            "DEFAULT": 3,
+            "LABEL": "Rotation Speed",
+            "MAX": 64,
+            "MIN": -64,
+            "NAME": "rotationSpeed",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 2,
+            "LABEL": "Pixel Smoothing",
+            "MAX": 64,
+            "MIN": 1,
+            "NAME": "pixelSmoothing",
+            "TYPE": "float"
+        },
+        {
             "DEFAULT": 3.14,
-            "LABEL": "initialAngle",
+            "LABEL": "rotationAngle",
             "MAX": 6.28,
             "MIN": 0,
-            "NAME": "initialAngle",
+            "NAME": "rotationAngle",
             "TYPE": "float"
         },
         {
@@ -41,6 +57,17 @@
         },
         {
             "DEFAULT": [
+                0,
+                0,
+                1,
+                1
+            ],
+            "LABEL": "blendColor",
+            "NAME": "blendColor",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
                 1,
                 1,
                 1,
@@ -49,6 +76,38 @@
             "LABEL": "backgroundColor",
             "NAME": "backgroundColor",
             "TYPE": "color"
+        },
+        {
+            "DEFAULT": -0.5,
+            "LABEL": "size",
+            "MAX": 100,
+            "MIN": -100,
+            "NAME": "size",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 6,
+            "LABEL": "seconds",
+            "MAX": 64,
+            "MIN": 0,
+            "NAME": "seconds",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 32,
+            "LABEL": "Number of Rings",
+            "MAX": 64,
+            "MIN": 1,
+            "NAME": "rings",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.12,
+            "LABEL": "Warp",
+            "MAX": 64,
+            "MIN": -64,
+            "NAME": "warp",
+            "TYPE": "float"
         }
     ],
     "ISFVSN": "2"
@@ -60,10 +119,7 @@
 #define HALF_PI 1.57079632675
 #define TWO_PI 6.283185307
 
-#define SECONDS 6.0
-#define COUNT 32
-
-// #define initialAngle PI
+// #define rotationAngle PI
 
 // #define pulse true
 // #define rotation true
@@ -87,15 +143,15 @@ float randomMovement(in float x)
 
 
 float vignetteNoise(vec2 uv) {
-    vec2 i = floor(uv);
+    vec2 ring = floor(uv);
     vec2 f = fract(uv);
 
     vec2 u = f*f*(3.0-2.0*f);
 
-    return mix( mix( dot( randomNoise(i + vec2(0.0,0.0)), f - vec2(0.0,0.0) ),
-                     dot( randomNoise(i + vec2(1.0,0.0)), f - vec2(1.0,0.0) ), u.x),
-                mix( dot( randomNoise(i + vec2(0.0,1.0)), f - vec2(0.0,1.0) ),
-                     dot( randomNoise(i + vec2(1.0,1.0)), f - vec2(1.0,1.0) ), u.x), u.y);
+    return mix( mix( dot( randomNoise(ring + vec2(0.0,0.0)), f - vec2(0.0,0.0) ),
+                     dot( randomNoise(ring + vec2(1.0,0.0)), f - vec2(1.0,0.0) ), u.x),
+                mix( dot( randomNoise(ring + vec2(0.0,1.0)), f - vec2(0.0,1.0) ),
+                     dot( randomNoise(ring + vec2(1.0,1.0)), f - vec2(1.0,1.0) ), u.x), u.y);
 }
 
 mat2 rotate(float angle)
@@ -120,8 +176,8 @@ vec2 center(vec2 uv)
 
 vec3 time()
 {
-    float period = mod(TIME,SECONDS);
-    vec3 t = vec3(fract(TIME/SECONDS),period, 1.0-fract(period));
+    float period = mod(TIME,seconds);
+    vec3 t = vec3(fract(TIME/seconds),period, 1.0-fract(period));
     return t;       // return fract(length),period,period phase
 }
 
@@ -132,7 +188,7 @@ float scene(vec2 uv, vec3 t)
     float seed = 29192.173;
     float center = length(uv-0.5) - 0.5;
 
-    float n_scale = 0.12;
+    float n_scale = warp;
 
     float n_1 = vignetteNoise(uv + PI) * n_scale;
     float n_2 = vignetteNoise(uv+seed - PI) * n_scale;
@@ -142,22 +198,22 @@ float scene(vec2 uv, vec3 t)
     }
 
     float d = 1.0;
-    for(int i = 1; i <= COUNT; i++)
+    for(float ring = 1.; ring <= rings; ring++)
     {
-        float spread = 1.0 / float(i);
-        float speed = ceil(3.0*spread);
-        float r = randomMovement(float(i)*5.0 + seed);
+        float spread = 1.0 / ring;
+        float speed = ceil(rotationSpeed*spread);
+        float r = randomMovement(ring*5.0 + seed);
         float r_scalar = r * 2.0 - 1.0;
 
         vec2 pos = uv - vec2(0.0);
 
-        pos *= rotate(initialAngle);
+        pos *= rotate(rotationAngle);
 
         if(rotation) {
             pos += vec2(0.01) * rotate(TWO_PI * r_scalar + TWO_PI * t.x * speed * sign(r_scalar));
-            pos *= rotate(TWO_PI * r_scalar + TWO_PI * t.x * speed * sign(r_scalar) + vignetteNoise(pos + float(i) + TIME) );
+            pos *= rotate(TWO_PI * r_scalar + TWO_PI * t.x * speed * sign(r_scalar) + vignetteNoise(pos + float(ring) + TIME) );
             pos += mix(n_1,n_2,0.5+0.5*sin(TWO_PI*t.x*speed));
-            pos *= rotate(TWO_PI * r_scalar + TWO_PI * t.x * speed * sign(r_scalar) + vignetteNoise(pos + float(i) + TIME) );
+            pos *= rotate(TWO_PI * r_scalar + TWO_PI * t.x * speed * sign(r_scalar) + vignetteNoise(pos + float(ring) + TIME) );
         }
 
         float s = .45 + .126 * r;
@@ -184,37 +240,35 @@ void main() {
     uv = center( uv );
     uv = uv * 2.0 - 1.0;
 
-    float size = 0.5;
+    // float size = -0.5;
     if(pulse) 
         uv = uv * (1.0 + .03 * sin(TWO_PI*t.x));
     else
-        uv = uv * (1.0 + .03 * TWO_PI*size);
+        uv = uv * (1.0 + .03 * TWO_PI*-size);
 
     uv = uv * 0.5 + 0.5;
     // scene
     float s = scene(uv, t);
-    // aa
-    float pixelSmoothing = 2.0;
-    float aa = ratio(RENDERSIZE.xy).x/RENDERSIZE.x*pixelSmoothing;
+
+    float smoothing = ratio(RENDERSIZE.xy).x/RENDERSIZE.x*pixelSmoothing;
     
     // symbol color
-    vec3 color = vec3(symbolColor);
+    vec4 color = vec4(symbolColor.rgb, 1.0);
 
-    // color = mix(color,vec3(0., 0., 1.0),1.0-smoothstep(-aa,aa,s));
+    // blend color
+    color = mix(color,vec4(blendColor.rgb, 1.0),1.0-smoothstep(-smoothing,smoothing,s));
 
     // background color
-    color = mix(color,vec3(backgroundColor),smoothstep(-aa,aa,s));
+    color = mix(color,vec4(backgroundColor.rgb,1.0),smoothstep(-smoothing,smoothing,s));
 
-    // invert
-    // color = 1.0 - color;
-        
     // vignette
-    // float size = length(uv-.5)-1.33;
-    // float vignette = (size) * 0.75 + randomVignette(uv) *.08;        
-    // color = mix(color,vec3(0.0, 0.0, 0.0),vignette+.5);
-	// float d = vignetteNoise(uv*7.0+TIME*0.25);  
-    // gl_FragColor = vec4(color,mix(.25,.25+.75*d,1.0-smoothstep(-aa,aa,s)));
+    float size = length(uv-.5)-1.33;
+    float vignette = (size) * 0.75 + randomVignette(uv) *.08;        
+    color = mix(color,vec4(0.0, 0.0, 0.0, 1.0),vignette+.5);
+	float d = vignetteNoise(uv*7.0+TIME*0.25);  
+    vec4 vColor = vec4(color.rgb,mix(1., 1.+.75*d, 1.0-smoothstep(-smoothing,smoothing,s)));
 
-    gl_FragColor = vec4(color,1.0);
+    gl_FragColor = vColor;
+    // gl_FragColor = vec4(color,1.0);
 }
 
