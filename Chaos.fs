@@ -7,6 +7,142 @@
     "DESCRIPTION": "Shader of the symbol for Chaos",
     "IMPORTED": {
     },
+    "INPUTS": [
+        {
+            "DEFAULT": 0.1,
+            "LABEL": "Background Red",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "bgRed",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.44,
+            "LABEL": "Background Green",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "bgGreen",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.9,
+            "LABEL": "Background Blue",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "bgBlue",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "LABEL": "Background Alpha",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "bgAlpha",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.3,
+            "LABEL": "Shape Red",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "shapeRed",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.24,
+            "LABEL": "Shape Green",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "shapeGreen",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.8,
+            "LABEL": "Shape Blue",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "shapeBlue",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "LABEL": "Shape Alpha",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "shapeAlpha",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.1,
+            "LABEL": "Torus Radius Outer",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "torusRadiusOuter",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.1,
+            "LABEL": "Torus Radius Innter",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "torusRadiusInner",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 8,
+            "LABEL": "Number of Arrows",
+            "MAX": 16,
+            "MIN": 1,
+            "NAME": "numberOfArrows",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "Spin",
+            "MAX": 5,
+            "MIN": -5,
+            "NAME": "spin",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "Pivot Horizontal",
+            "MAX": 5,
+            "MIN": -5,
+            "NAME": "pivotH",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "Pivot Vertical",
+            "MAX": 5,
+            "MIN": -5,
+            "NAME": "pivotV",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "LABEL": "Shape Size",
+            "MAX": 5,
+            "MIN": 0,
+            "NAME": "shapeSize",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.5,
+            "LABEL": "Arrow Length",
+            "MAX": 1,
+            "MIN": -0.1,
+            "NAME": "arrowLength",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": false,
+            "LABEL": "Auto Rotate",
+            "NAME": "autoRotate",
+            "TYPE": "bool"
+        }
+    ],
     "ISFVSN": "2"
 }
 */
@@ -20,7 +156,7 @@
 void drawArrows(inout vec2 p, float c) {
 	float m = TWO_PI / c;
 	float a = mod(atan(p.x, p.y) - m*.5, m) - m*.5;
-	p = vec2(cos(a), sin(a)) * length(p);
+	p = vec2(cos(a), sin(a)) * length(p*shapeSize);
 }
 
 mat2 radToDec(float a) {
@@ -30,7 +166,9 @@ mat2 radToDec(float a) {
 
 float box(vec3 p, vec3 b)
 {
-	vec3 d = abs(p) - b;
+	float boxLength = 1.;
+	boxLength += arrowLength;
+	vec3 d = abs(p * (boxLength)) - b;
 	return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
 }
 
@@ -67,20 +205,24 @@ float smoothMax(float a, float b, float r) {
 }
 
 float de(vec3 p) {
+	if(autoRotate) {
+		p.xz *= radToDec(TIME*-pivotV);
+		p.zy *= radToDec(TIME*-pivotH);
+		p.xy *= radToDec(TIME*-spin);
+	}
+	else {
+		p.xz *= radToDec(-pivotV);
+		p.zy *= radToDec(-pivotH);
+		p.xy *= radToDec(-spin);
+	}
 
-	// p.xz *= radToDec(TIME);
-	// p.zy *= radToDec(TIME);
-	// p.xy *= radToDec(TIME);
-
-	float torusRadiusOuter = .1; // TODO make var
-	float torusRadiusInner = .1; // TODO make var
 	float d = torus82(p.yzx, vec2(torusRadiusInner, torusRadiusOuter));
 
-	float numberOfArrows = 8.; // TODO make var
 	drawArrows(p.xy, numberOfArrows);
 	d = smoothMin(d, box(p, vec3(1.3, .1, .1)), .1);
 
 	p.x -= 1.7;
+	p.x += arrowLength;
 	p.xy *= radToDec(-PI*.5);
 
 	d = smoothMin(d, max(cone(p.zxy, normalize(vec2(.4, .2))), -p.y - .4), .1);
@@ -110,15 +252,21 @@ void main() {
 		t += d;
 	}
 
-	float backgoundAlpha = 1.0;
-	vec4 backgroundColor = vec4(1., 1., 1., backgoundAlpha);
+	vec4 pct = (vec4(uv.x, uv.y, uv.x, 1.));
+
+	vec4 backgroundColor = vec4(bgRed, bgGreen, bgBlue, bgAlpha);
+	vec4 backgroundGradient = vec4(0.,0.,0.,1.);
+	backgroundColor = mix(backgroundColor, backgroundGradient, pct);
 	vec4 col = backgroundColor;
 
-	float shapeAlpha = 1.0;
-	vec4 shapeColor = vec4(.0, .0, .0, shapeAlpha);
+	vec4 shapeColor = vec4(shapeRed, shapeGreen, shapeBlue, shapeAlpha);
+	vec4 shapeGradient = vec4(0.,0.,0.,1.);
+	shapeColor = mix(shapeColor, shapeGradient, pct);
+
 	if (t <= 100.) {
 		col = shapeColor;
 	}
+
 
 	float brightnessAll = 0.5;
 	float brightness = 0.5;
