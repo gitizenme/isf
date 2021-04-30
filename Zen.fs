@@ -96,7 +96,7 @@
         {
             "DEFAULT": 32,
             "LABEL": "Number of Rings",
-            "MAX": 64,
+            "MAX": 256,
             "MIN": 1,
             "NAME": "rings",
             "TYPE": "float"
@@ -269,6 +269,6 @@ void main() {
     vec4 vColor = vec4(color.rgb,mix(1., 1.+.75*d, 1.0-smoothstep(-smoothing,smoothing,s)));
 
     gl_FragColor = vColor;
-    // gl_FragColor = vec4(color,1.0);
+//     gl_FragColor = vec4(color);
 }
 
