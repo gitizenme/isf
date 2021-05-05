@@ -8,11 +8,19 @@
     },
     "INPUTS": [
         {
-            "DEFAULT": 2,
+            "DEFAULT": -2,
             "LABEL": "Scale",
             "MAX": 10,
-            "MIN": 1,
+            "MIN": -10,
             "NAME": "scale",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "Rotaion Angle",
+            "MAX": 360,
+            "MIN": 0,
+            "NAME": "rotationAngle",
             "TYPE": "float"
         },
         {
@@ -48,7 +56,7 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 0,
+            "DEFAULT": 0.7,
             "LABEL": "red",
             "MAX": 1,
             "MIN": 0,
@@ -56,7 +64,7 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 0,
+            "DEFAULT": 0.1,
             "LABEL": "green",
             "MAX": 1,
             "MIN": 0,
@@ -64,7 +72,7 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 0,
+            "DEFAULT": 0.9,
             "LABEL": "blue",
             "MAX": 1,
             "MIN": 0,
@@ -72,7 +80,7 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 0.5,
+            "DEFAULT": 0.1,
             "LABEL": "Blend Red",
             "MAX": 1,
             "MIN": 0.01,
@@ -80,7 +88,7 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 0.5,
+            "DEFAULT": 0.1,
             "LABEL": "Blend Green",
             "MAX": 1,
             "MIN": 0.01,
@@ -100,6 +108,10 @@
 }
 */
 
+mat2 rotate(float angle)
+{
+    return mat2( cos(angle),-sin(angle),sin(angle),cos(angle) );
+}
 
 float Slider(vec2 p, float w, float r, float b) {
     // p = point to evaluate
@@ -128,13 +140,14 @@ void main() {
     float t = TIME;
     
     uv *= scale;
+    uv *= -rotate(rotationAngle);
     
     float d = Slider(uv, width, radius, bulge);
-    
+
     // color
     vec3 col = vec3(blendRed, blendGreen, blendBlue) - sign(d)*vec3(red,green,blue);
 	col *= 1.0 - exp(-4.0*abs(d));
-	col *= 0.7 + 0.8*cos(ripples*d);
+	col *= 0.1 + 0.8*cos(ripples*d);
 	col = mix( col, vec3(red,green,blue), 1.0 - smoothstep(0.0,0.015,abs(d)) );
     
     gl_FragColor = vec4(col,1.0);
