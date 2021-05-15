@@ -9,28 +9,70 @@
             "DEFAULT": 0.7,
             "MAX": 1,
             "MIN": 0.2,
-            "NAME": "Blur",
+            "NAME": "blur",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1.57079632675,
+            "MAX": 3.14159265359,
+            "MIN": 0,
+            "NAME": "rotationAngle",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.25,
+            "MAX": 1,
+            "MIN": 0.05,
+            "NAME": "scale",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 120,
+            "MAX": 240,
+            "MIN": 0,
+            "NAME": "bpm",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.5,
+            "MAX": 10,
+            "MIN": 0.05,
+            "NAME": "shine",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 2.5,
+            "MAX": 10,
+            "MIN": 0.05,
+            "NAME": "beam",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.5,
+            "MAX": 10,
+            "MIN": 0.05,
+            "NAME": "magn",
             "TYPE": "float"
         },
         {
             "DEFAULT": 0.1,
             "MAX": 1,
             "MIN": 0,
-            "NAME": "RED",
+            "NAME": "starRed",
             "TYPE": "float"
         },
         {
             "DEFAULT": 0.4,
             "MAX": 1,
             "MIN": 0,
-            "NAME": "GREEN",
+            "NAME": "starGreen",
             "TYPE": "float"
         },
         {
             "DEFAULT": 0.9,
             "MAX": 1,
             "MIN": 0,
-            "NAME": "BLUE",
+            "NAME": "starBlue",
             "TYPE": "float"
         },
         {
@@ -50,6 +92,22 @@
             "TYPE": "point2D"
         },
         {
+            "DEFAULT": [
+                0,
+                0
+            ],
+            "MAX": [
+                0.5,
+                0.5
+            ],
+            "MIN": [
+                -0.5,
+                -0.5
+            ],
+            "NAME": "center",
+            "TYPE": "point2D"
+        },
+        {
             "NAME": "invert",
             "TYPE": "bool"
         }
@@ -62,35 +120,42 @@
 precision mediump float;
 #endif
 
+#define PI 3.14159265359
+#define HALF_PI 1.57079632675
+
+mat2 rotate(float angle)
+{
+    return mat2( cos(angle),-sin(angle),sin(angle),cos(angle) );
+}
+
 void main(){
-    vec2 st = gl_FragCoord.xy/RENDERSIZE.xy;
+    vec2 st = (gl_FragCoord.xy-.5*RENDERSIZE.xy)/RENDERSIZE.y;
     vec3 color = vec3(0.0);
-    
-  float Shine = cos (TIME);
-  float Beam = cos (TIME*2.5);
-  float Magn = sin (TIME);
-  float Bing1 = sin (pinchPoint.y *TIME);
-  float Bing2 = sin (pinchPoint.x *TIME);
-  float BWWB;
 
-	if (invert) BWWB  = 2.0;
-	else  BWWB = 1.0;
- 
+    st *= rotate(rotationAngle);
 
-    vec2 pos = vec2(0.5)-st;
+    float rate = bpm/60.0;
 
-    float r = length(pos)*2.0;
-    float a = atan((pos.y+Bing1),(pos.x+Bing2));
+    float pinchY = sin (pinchPoint.y *TIME);
+    float pinchX = sin (pinchPoint.x *TIME);
+    float colorInvert = 1.0;
 
-    float f = cos(a*3.);
-    f = abs(cos(a/(Shine/12.0)/2.0)*sin(a/(Beam/8.0)/2.0))*Magn/2.0+0.1;
-        color = vec3( BWWB -smoothstep(f,f+Blur,r) );
+    if (invert) {
+        colorInvert  = 2.0;
+    }
+
+    vec2 pos = vec2(center.x+st.x, center.y-st.y);
+
+    float r = length(pos)/scale/2.0;
+    float angle = atan((pos.y+pinchY),(pos.x+pinchX));
+
+    float f = cos(angle*3.);
+    f = abs(cos(angle/(shine/12.0)/rate)*sin(angle/(beam/8.0)/rate))*magn/rate+0.01;
+
+    color += vec3( colorInvert -smoothstep(f,f+blur,r) );
 
     gl_FragColor = vec4(color, 1.0);
-     gl_FragColor = vec4(color, 1.0);
-    gl_FragColor.b *= BLUE;
-	gl_FragColor.g *= GREEN;
-	gl_FragColor.r *= RED;
+    gl_FragColor *= vec4(starRed, starGreen, starBlue, 1.0);
 
 }
 
