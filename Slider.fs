@@ -17,10 +17,18 @@
         },
         {
             "DEFAULT": 0,
-            "LABEL": "Rotaion Angle",
+            "LABEL": "Rotaion Angle A",
             "MAX": 360,
             "MIN": 0,
-            "NAME": "rotationAngle",
+            "NAME": "rotationAngleA",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "Rotaion Angle B",
+            "MAX": 360,
+            "MIN": 0,
+            "NAME": "rotationAngleB",
             "TYPE": "float"
         },
         {
@@ -140,7 +148,12 @@ void main() {
     float t = TIME;
     
     uv *= scale;
-    uv *= -rotate(rotationAngle);
+    if(rotationAngleA > 0.) {
+        uv *= -rotate(rotationAngleA);
+    }
+    else if(rotationAngleB > 0.) {
+        uv *= rotate(rotationAngleB);
+    }
     
     float d = Slider(uv, width, radius, bulge);
 
