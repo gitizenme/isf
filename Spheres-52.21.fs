@@ -264,7 +264,7 @@ float sd3x = 3.7;
 float sd4x = -2.6;
 float sd5x = -4.7;
 float sd6x = -6.9;
-
+float offset = 1.5;
 //
 // Based on:
 // "ShaderToy Tutorial - Ray Marching Primitives" 
@@ -287,11 +287,11 @@ float GetDist(vec3 p) {
     float planeDist = p.y+0.;
    
     float sd1 = sdSphere(p-vec3(sd1x, sd1y, sd1z), sd1r);
-    float sd2 = sdSphere(p-vec3(sd2x, sd2y, sd2z), sd2r);
-    float sd3 = sdSphere(p-vec3(sd3x, sd3y, sd3z), sd3r);
-    float sd4 = sdSphere(p-vec3(sd4x, sd4y, sd4z), sd4r);
-    float sd5 = sdSphere(p-vec3(sd5x, sd5y, sd5z), sd5r);
-    float sd6 = sdSphere(p-vec3(sd6x, sd6y, sd6z), sd6r);
+    float sd2 = sdSphere(p-vec3(sd2x+offset, sd2y, sd2z), sd2r);
+    float sd3 = sdSphere(p-vec3(sd3x+offset, sd3y, sd3z), sd3r);
+    float sd4 = sdSphere(p-vec3(sd4x-offset, sd4y, sd4z), sd4r);
+    float sd5 = sdSphere(p-vec3(sd5x-offset, sd5y, sd5z), sd5r);
+    float sd6 = sdSphere(p-vec3(sd6x-offset, sd6y, sd6z), sd6r);
 
     float d = 0.;
     d = min(sd1, planeDist);
@@ -330,8 +330,8 @@ vec3 GetNormal(vec3 p) {
 }
 
 float GetLight(vec3 p) {
-    vec3 lightPos = vec3(0, 5, 1);
-//    lightPos.xz += vec2(sin(TIME), cos(TIME))*2.;
+    vec3 lightPos = vec3(0, 5, -1);
+    lightPos.xz += vec2(sin(TIME), cos(TIME))*180./60.;
     lightPos.x += lightPosX;
     lightPos.y += lightPosY;
     lightPos.z += lightPosZ;
@@ -349,7 +349,7 @@ void main() {
     vec2 uv = (gl_FragCoord.xy-.5*RENDERSIZE.xy)/RENDERSIZE.y;
     vec3 col = vec3(baseColor.rgb);
     
-    vec3 ro = vec3(cameraX, 3, cameraZ);
+    vec3 ro = vec3(cameraX, 4, cameraZ);
     vec3 rd = normalize(vec3(uv.x-.15, uv.y-.2, 1));
     float d = RayMarch(ro, rd);
     
