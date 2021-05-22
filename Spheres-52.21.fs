@@ -110,14 +110,6 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": -0.5,
-            "LABEL": "sd1x",
-            "MAX": 100,
-            "MIN": -10.5,
-            "NAME": "sd1x",
-            "TYPE": "float"
-        },
-        {
             "DEFAULT": 1,
             "LABEL": "sd1y",
             "MAX": 5,
@@ -139,14 +131,6 @@
             "MAX": 5,
             "MIN": 0,
             "NAME": "sd1r",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": 1.6,
-            "LABEL": "sd2x",
-            "MAX": 10,
-            "MIN": -10.5,
-            "NAME": "sd2x",
             "TYPE": "float"
         },
         {
@@ -174,14 +158,6 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 3.7,
-            "LABEL": "sd3x",
-            "MAX": 10,
-            "MIN": -10.5,
-            "NAME": "sd3x",
-            "TYPE": "float"
-        },
-        {
             "DEFAULT": 1,
             "LABEL": "sd3y",
             "MAX": 5,
@@ -203,14 +179,6 @@
             "MAX": 5,
             "MIN": 0,
             "NAME": "sd3r",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": -2.6,
-            "LABEL": "sd4x",
-            "MAX": 10,
-            "MIN": -10.5,
-            "NAME": "sd4x",
             "TYPE": "float"
         },
         {
@@ -238,14 +206,6 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": -4.7,
-            "LABEL": "sd5x",
-            "MAX": 10,
-            "MIN": -10.5,
-            "NAME": "sd5x",
-            "TYPE": "float"
-        },
-        {
             "DEFAULT": 1,
             "LABEL": "sd5y",
             "MAX": 5,
@@ -267,14 +227,6 @@
             "MAX": 5,
             "MIN": 0,
             "NAME": "sd5r",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": -6.9,
-            "LABEL": "sd6x",
-            "MAX": 10,
-            "MIN": -10.5,
-            "NAME": "sd6x",
             "TYPE": "float"
         },
         {
@@ -306,6 +258,12 @@
 }
 */
 
+float sd1x = -0.5;
+float sd2x = 1.6;
+float sd3x = 3.7;
+float sd4x = -2.6;
+float sd5x = -4.7;
+float sd6x = -6.9;
 
 //
 // Based on:
