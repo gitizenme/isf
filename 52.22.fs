@@ -198,7 +198,7 @@ vec4 GetDist(vec3 p)
     rb0 += sin(p.x*5.+TIME)*0.1 + cos(p.z*2.+TIME)*0.3;
     vec4 b0 = vec4(boxColor1.rgb,rb0);
 
-    vec3 b1p = vec3(-3,box2PosY,7);
+    vec3 b1p = vec3(-5,box2PosY,7);
     b1p = p - b1p;
     b1p.xy *= Rotate(box2Rotation);
     b1p.xz *= Rotate(box2Rotation);
@@ -206,7 +206,7 @@ vec4 GetDist(vec3 p)
     rb1 += sin(p.x*5.+TIME)*0.15 + cos(p.z*2.+TIME)*0.25;
     vec4 b1 = vec4(boxColor2.rgb,rb1);
 
-    vec3 b2p = vec3(3,box3PosY,7);
+    vec3 b2p = vec3(5,box3PosY,7);
     b2p = p - b2p;
     b2p.xy *= Rotate(box3Rotation);
     b2p.xz *= Rotate(box3Rotation);
