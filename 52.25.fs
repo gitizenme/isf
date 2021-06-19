@@ -7,31 +7,37 @@
     },
     "INPUTS": [
         {
+            "DEFAULT": 0.5,
             "LABEL": "Ball Radius 1",
             "NAME": "ballRadius1",
             "TYPE": "float"
         },
         {
+            "DEFAULT": 0.5,
             "LABEL": "Ball Radius 2",
             "NAME": "ballRadius2",
             "TYPE": "float"
         },
         {
+            "DEFAULT": 0.5,
             "LABEL": "Ball Radius 3",
             "NAME": "ballRadius3",
             "TYPE": "float"
         },
         {
+            "DEFAULT": 0.5,
             "LABEL": "Ball Radius 4",
             "NAME": "ballRadius4",
             "TYPE": "float"
         },
         {
+            "DEFAULT": 0.5,
             "LABEL": "Ball Radius 5",
             "NAME": "ballRadius5",
             "TYPE": "float"
         },
         {
+            "DEFAULT": 0.5,
             "LABEL": "Ball Radius 6",
             "NAME": "ballRadius6",
             "TYPE": "float"
@@ -45,7 +51,7 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 0,
+            "DEFAULT": 1.5,
             "LABEL": "Ball Offset",
             "MAX": 10,
             "MIN": 0,
@@ -53,7 +59,7 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 120,
+            "DEFAULT": 125,
             "LABEL": "Beats per Minute",
             "MAX": 1,
             "MIN": 240,
@@ -63,25 +69,105 @@
         {
             "DEFAULT": [
                 1,
-                1,
-                1,
+                0,
+                0.01568627450980392,
                 1
             ],
-            "LABEL": "Ball Color",
-            "NAME": "ballColor",
+            "LABEL": "Ball 1 Color",
+            "NAME": "ball1Color",
             "TYPE": "color"
         },
         {
             "DEFAULT": [
-                0.9411764705882353,
-                0.9607843137254902,
-                0.8156862745098039,
+                0,
+                0,
+                1,
+                1
+            ],
+            "LABEL": "Ball 2 Color",
+            "NAME": "ball2Color",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0,
+                1,
+                0,
+                1
+            ],
+            "LABEL": "Ball 3 Color",
+            "NAME": "ball3Color",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                1,
+                0.6666666666666666,
+                0,
+                1
+            ],
+            "LABEL": "Ball 4 Color",
+            "NAME": "ball4Color",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                1,
+                0,
+                1,
+                1
+            ],
+            "LABEL": "Ball 5 Color",
+            "NAME": "ball5Color",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0.3333333333333333,
+                1,
+                1,
+                1
+            ],
+            "LABEL": "Ball 6 Color",
+            "NAME": "ball6Color",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                1,
+                1,
+                1,
                 1
             ],
             "LABEL": "Ground Color",
             "NAME": "groundColor",
             "TYPE": "color"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "Light X",
+            "MAX": 7,
+            "MIN": -7,
+            "NAME": "lightX",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "Light Y",
+            "MAX": 7,
+            "MIN": -7,
+            "NAME": "lightY",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "Light Z",
+            "MAX": 7,
+            "MIN": -7,
+            "NAME": "lightZ",
+            "TYPE": "float"
         }
+        
     ],
     "ISFVSN": "2"
 }
@@ -137,17 +223,38 @@ mat3 rotateZ(float theta) {
     );
 }
 
+vec4 intersectSDF(vec4 a, vec4 b, float k) {
+    float h = clamp(0.5 - 0.5*(b.w-a.w)/k, 0.0, 1.0);
+    vec3 color = mix(b.rgb, a.rgb, h);
+    float dist = mix(b.w, a.w, h) + k*h*(1.0-h);
+    return vec4(color, dist);
+}
+
+
+vec4 unionSDF(vec4 a, vec4 b, float k) {
+    float h = clamp(0.5 + 0.5 *(b.w-a.w)/k, 0.0, 1.0);
+    vec3 color = mix(b.rgb, a.rgb, h);
+    float dist = mix(b.w, a.w, h) - k*h*(1.0-h);
+    return vec4(color, dist);
+}
+
+vec4 differenceSDF(vec4 a, vec4 b, float k) {
+    float h = clamp(0.5 - 0.5*(b.w+a.w)/k, 0.0, 1.0);
+    vec3 color = mix(b.rgb, a.rgb, h);
+    float dist = mix(b.w, -a.w, h) + k*h*(1.0-h);
+    return vec4(color, dist);
+}
 
 vec4 intersectSDF(vec4 a, vec4 b) {
     return a.w > b.w ? a : b;
 }
   
 vec4 unionSDF(vec4 a, vec4 b) {
-    return a.w < b.w? a : b;
+    return a.w < b.w ? a : b;
 }
  
 vec4 differenceSDF(vec4 a, vec4 b) {
-    return a.w > -b.w? a : vec4(b.rgb,-b.w);
+    return a.w > -b.w ? a : vec4(b.rgb,-b.w);
 }
 
 /**
@@ -195,47 +302,22 @@ vec4 sceneSDF(vec3 samplePoint) {
     vec4 plane = vec4(groundColor.rgb, planeSDF(samplePoint, vec4(1,1,1,groundPlanePos)));
 
     float bbpm = 4.;  // beats per measure
-    float spm = bbpm*60./bpm; // seconds per measure
+    float spm = (bbpm*60./bpm)/4.; // seconds per measure
     mat3 pointRotation = rotateY(spm * TIME) * rotateX(spm * TIME);
     samplePoint = pointRotation * samplePoint;
 
     float ball1 = sphereSDF(samplePoint - vec3(ballOffset, 0.0, 0.0), ballRadius1);
-    vec4 balls = vec4(ballColor.rgb, ball1);
-    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint + vec3(ballOffset, 0.0, 0.0), ballRadius2)));
-    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint - vec3(0.0, ballOffset, 0.0), ballRadius3)));
-    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint + vec3(0.0, ballOffset, 0.0), ballRadius4)));
-    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint - vec3(0.0, 0.0, ballOffset), ballRadius5)));
-    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint + vec3(0.0, 0.0, ballOffset), ballRadius6)));
+    vec4 balls = vec4(ball1Color.rgb, ball1);
+    balls = unionSDF(balls, vec4(ball2Color.rgb, sphereSDF(samplePoint + vec3(ballOffset, 0.0, 0.0), ballRadius2)));
+    balls = unionSDF(balls, vec4(ball3Color.rgb, sphereSDF(samplePoint - vec3(0.0, ballOffset, 0.0), ballRadius3)));
+    balls = unionSDF(balls, vec4(ball4Color.rgb, sphereSDF(samplePoint + vec3(0.0, ballOffset, 0.0), ballRadius4)));
+    balls = unionSDF(balls, vec4(ball5Color.rgb, sphereSDF(samplePoint - vec3(0.0, 0.0, ballOffset), ballRadius5)));
+    balls = unionSDF(balls, vec4(ball6Color.rgb, sphereSDF(samplePoint + vec3(0.0, 0.0, ballOffset), ballRadius6)));
     
     return unionSDF(plane, balls);
-//    return balls;
+    //return balls;
 }
 
-/**
- * Return the shortest distance from the eyepoint to the scene surface along
- * the marching direction. If no part of the surface is found between start and end,
- * return end.
- * 
- * eye: the eye point, acting as the origin of the ray
- * marchingDirection: the normalized direction to march in
- * start: the starting distance away from the eye
- * end: the max distance away from the ey to march before giving up
- */
-float shortestDistanceToSurface(vec3 eye, vec3 marchingDirection, float start, float end) {
-    float depth = start;
-    for (int i = 0; i < MAX_MARCHING_STEPS; i++) {
-        vec4 dist = sceneSDF(eye + depth * marchingDirection);
-        if (dist.w < EPSILON) {
-			return depth;
-        }
-        depth += dist.w;
-        if (depth >= end) {
-            return end;
-        }
-    }
-    return end;
-}
-            
 
 /**
  * Return the normalized direction to march in from the eye point for a single pixel.
@@ -255,20 +337,20 @@ vec3 rayDirection(float fieldOfView, vec2 size, vec2 fragCoord) {
  */
 vec3 estimateNormal(vec3 p) {
 
-    float d=sceneSDF(p).w;// Distance
-    vec2 e=vec2(.01,0);// Epsilon
+    float d = sceneSDF(p).w;// Distance
+    vec2 e = vec2(.001, 0.);// Epsilon
      
-    vec3 n=d-vec3(
-        sceneSDF(p-e.xyy).w,
-        sceneSDF(p-e.yxy).w,
-        sceneSDF(p-e.yyx).w);
+    vec3 n = d - vec3(
+        sceneSDF(p - e.xyy).w,
+        sceneSDF(p - e.yxy).w,
+        sceneSDF(p - e.yyx).w);
          
     return normalize(n);
 }
 
 
 /**
- * Lighting contribution of a single point light source via Phong illumination.
+ * Lighting contribution of a single point light source via Phong lighting.
  * 
  * The vec3 returned is the RGB color of the light's contribution.
  *
@@ -284,7 +366,7 @@ vec3 estimateNormal(vec3 p) {
  * See https://en.wikipedia.org/wiki/Phong_reflection_model#Description
  */
 vec3 phongContribForLight(vec3 k_d, vec3 k_s, float alpha, vec3 p, vec3 eye,
-                          vec3 lightPos, vec3 lightIntensity) {
+                          vec3 lightPos, vec3 lightIntensity, vec4 dColor) {
     vec3 N = estimateNormal(p);
     vec3 L = normalize(lightPos - p);
     vec3 V = normalize(eye - p);
@@ -307,7 +389,7 @@ vec3 phongContribForLight(vec3 k_d, vec3 k_s, float alpha, vec3 p, vec3 eye,
 }
 
 /**
- * Lighting via Phong illumination.
+ * Lighting via Phong lighting.
  * 
  * The vec3 returned is the RGB color of that point after lighting is applied.
  * k_a: Ambient color
@@ -319,20 +401,62 @@ vec3 phongContribForLight(vec3 k_d, vec3 k_s, float alpha, vec3 p, vec3 eye,
  *
  * See https://en.wikipedia.org/wiki/Phong_reflection_model#Description
  */
-vec3 phongIllumination(vec3 k_a, vec3 k_d, vec3 k_s, float alpha, vec3 p, vec3 eye) {
+vec3 phongIllumination(vec3 k_a, vec3 k_d, vec3 k_s, float alpha, vec3 p, vec3 eye, vec4 dColor) {
     const vec3 ambientLight = 0.5 * vec3(1.0, 1.0, 1.0);
     vec3 color = ambientLight * k_a;
     
-    vec3 light1Pos = vec3(4.0 * sin(TIME/2.),
-                          2.0,
-                          4.0 * cos(TIME/2.));
+    // vec3 light1Pos = vec3(4.0 * sin(TIME/2.),
+    //                       2.0,
+    //                       4.0 * cos(TIME/2.));
+    vec3 light1Pos = vec3(lightX,
+                          lightY,
+                          lightZ);
     vec3 light1Intensity = vec3(0.4, 0.4, 0.4);
     
     color += phongContribForLight(k_d, k_s, alpha, p, eye,
                                   light1Pos,
-                                  light1Intensity);
+                                  light1Intensity, dColor);
     
     return color;
+}
+
+vec3 lighting(vec3 p, vec3 eye, vec4 dColor) {
+
+    vec3 K_a = (p + groundColor.rgb) / 2.0;
+    vec3 K_d = K_a;
+    vec3 K_s = vec3(1.0, 1.0, 1.0);
+    float shininess = 10.0;
+    
+    vec3 color = phongIllumination(K_a, K_d, K_s, shininess, p, eye, dColor);
+    //vec3 color = p * dColor.rgb;
+
+    return color;
+}
+
+/**
+ * Return the shortest distance from the eyepoint to the scene surface along
+ * the marching direction. If no part of the surface is found between start and end,
+ * return end.
+ * 
+ * eye: the eye point, acting as the origin of the ray
+ * marchingDirection: the normalized direction to march in
+ * start: the starting distance away from the eye
+ * end: the max distance away from the ey to march before giving up
+ */
+float raymarch(vec3 eye, vec3 marchingDirection, float start, float end, inout vec4 dColor) {
+    float depth = start;
+    for (int i = 0; i < MAX_MARCHING_STEPS; i++) {
+        vec4 dist = sceneSDF(eye + depth * marchingDirection);
+        if (dist.w < EPSILON) {
+			return depth;
+        }
+        depth += dist.w;
+        dColor = dist;
+        if (depth >= end) {
+            return end;
+        }
+    }
+    return end;
 }
 
 /**
@@ -353,29 +477,18 @@ mat3 viewMatrix(vec3 eye, vec3 center, vec3 up) {
 void main() {
 	vec3 viewDir = rayDirection(45.0, RENDERSIZE.xy, gl_FragCoord.xy);
     // vec3 eye = vec3(8.0, 5.0 * sin(0.2 * TIME), 7.0);
-    vec3 eye = vec3(8.0, 5.0 * sin(0.2), 7.0);
+    vec3 eye = vec3(8.0, 5.0, 7.0);
     
     mat3 viewToWorld = viewMatrix(eye, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
     
     vec3 worldDir = viewToWorld * viewDir;
     
-    float dist = shortestDistanceToSurface(eye, worldDir, MIN_DIST, MAX_DIST);
+    vec4 dColor = ball1Color;
+    float dist = raymarch(eye, worldDir, MIN_DIST, MAX_DIST, dColor);
     
-    if (dist > MAX_DIST - EPSILON) {
-        // Didn't hit anything
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-		return;
-    }
-    
-    // The closest point on the surface to the eyepoint along the view ray
     vec3 p = eye + dist * worldDir;
     
-    vec3 K_a = (p + groundColor.rgb) / 2.0;
-    vec3 K_d = K_a;
-    vec3 K_s = vec3(1.0, 1.0, 1.0);
-    float shininess = 10.0;
-    
-    vec3 color = phongIllumination(K_a, K_d, K_s, shininess, p, eye);
+    vec3 color = lighting(p, eye, dColor);
     
     gl_FragColor = vec4(color, 1.0);
 }
