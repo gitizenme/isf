@@ -1,5 +1,4 @@
-/*
-{
+/*{
     "CATEGORIES": [
         "Ray March"
     ],
@@ -7,16 +6,97 @@
     "IMPORTED": {
     },
     "INPUTS": [
-    ]
+        {
+            "LABEL": "Ball Radius 1",
+            "NAME": "ballRadius1",
+            "TYPE": "float"
+        },
+        {
+            "LABEL": "Ball Radius 2",
+            "NAME": "ballRadius2",
+            "TYPE": "float"
+        },
+        {
+            "LABEL": "Ball Radius 3",
+            "NAME": "ballRadius3",
+            "TYPE": "float"
+        },
+        {
+            "LABEL": "Ball Radius 4",
+            "NAME": "ballRadius4",
+            "TYPE": "float"
+        },
+        {
+            "LABEL": "Ball Radius 5",
+            "NAME": "ballRadius5",
+            "TYPE": "float"
+        },
+        {
+            "LABEL": "Ball Radius 6",
+            "NAME": "ballRadius6",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 3,
+            "LABEL": "Ground Plane Pos",
+            "MAX": 6.28,
+            "MIN": 0,
+            "NAME": "groundPlanePos",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "Ball Offset",
+            "MAX": 10,
+            "MIN": 0,
+            "NAME": "ballOffset",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 120,
+            "LABEL": "Beats per Minute",
+            "MAX": 1,
+            "MIN": 240,
+            "NAME": "bpm",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "LABEL": "Ball Color",
+            "NAME": "ballColor",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0.9411764705882353,
+                0.9607843137254902,
+                0.8156862745098039,
+                1
+            ],
+            "LABEL": "Ground Color",
+            "NAME": "groundColor",
+            "TYPE": "color"
+        }
+    ],
+    "ISFVSN": "2"
 }
-
 */
+
+
+#define PI 3.1415925359
 
 
 const int MAX_MARCHING_STEPS = 100;
 const float MIN_DIST = 0.0;
 const float MAX_DIST = 100.0;
 const float EPSILON = 0.0001;
+
+
 
 /**
  * Rotation matrix around the X axis.
@@ -57,6 +137,19 @@ mat3 rotateZ(float theta) {
     );
 }
 
+
+vec4 intersectSDF(vec4 a, vec4 b) {
+    return a.w > b.w ? a : b;
+}
+  
+vec4 unionSDF(vec4 a, vec4 b) {
+    return a.w < b.w? a : b;
+}
+ 
+vec4 differenceSDF(vec4 a, vec4 b) {
+    return a.w > -b.w? a : vec4(b.rgb,-b.w);
+}
+
 /**
  * Constructive solid geometry intersection operation on SDF-calculated distances.
  */
@@ -78,22 +171,9 @@ float differenceSDF(float distA, float distB) {
     return max(distA, -distB);
 }
 
-/**
- * Signed distance function for a cube centered at the origin
- * with dimensions specified by size.
- */
-float boxSDF(vec3 p, vec3 size) {
-    vec3 d = abs(p) - (size / 2.0);
-    
-    // Assuming p is inside the cube, how far is it from the surface?
-    // Result will be negative or zero.
-    float insideDistance = min(max(d.x, max(d.y, d.z)), 0.0);
-    
-    // Assuming p is outside the cube, how far is it from the surface?
-    // Result will be positive or zero.
-    float outsideDistance = length(max(d, 0.0));
-    
-    return insideDistance + outsideDistance;
+float planeSDF(vec3 p,vec4 n) {
+    // n must be normalized
+    return dot(p,n.xyz)+n.w;
 }
 
 /**
@@ -104,49 +184,31 @@ float sphereSDF(vec3 p, float r) {
 }
 
 /**
- * Signed distance function for an XY aligned cylinder centered at the origin with
- * height h and radius r.
- */
-float cylinderSDF(vec3 p, float h, float r) {
-    // How far inside or outside the cylinder the point is, radially
-    float inOutRadius = length(p.xy) - r;
-    
-    // How far inside or outside the cylinder is, axially aligned with the cylinder
-    float inOutHeight = abs(p.z) - h/2.0;
-    
-    // Assuming p is inside the cylinder, how far is it from the surface?
-    // Result will be negative or zero.
-    float insideDistance = min(max(inOutRadius, inOutHeight), 0.0);
-
-    // Assuming p is outside the cylinder, how far is it from the surface?
-    // Result will be positive or zero.
-    float outsideDistance = length(max(vec2(inOutRadius, inOutHeight), 0.0));
-    
-    return insideDistance + outsideDistance;
-}
-
-/**
  * Signed distance function describing the scene.
  * 
  * Absolute value of the return value indicates the distance to the surface.
  * Sign indicates whether the point is inside or outside the surface,
  * negative indicating inside.
  */
-float sceneSDF(vec3 samplePoint) {    
-    // Slowly spin the whole scene
-    samplePoint = rotateY(TIME / 2.0) * samplePoint;
-     
-    float ballOffset = 0.4 + 1.0 + sin(1.7 * TIME);
-    float ballRadius = 0.3;
-    float balls = sphereSDF(samplePoint - vec3(ballOffset, 0.0, 0.0), ballRadius);
-    balls = unionSDF(balls, sphereSDF(samplePoint + vec3(ballOffset, 0.0, 0.0), ballRadius));
-    balls = unionSDF(balls, sphereSDF(samplePoint - vec3(0.0, ballOffset, 0.0), ballRadius));
-    balls = unionSDF(balls, sphereSDF(samplePoint + vec3(0.0, ballOffset, 0.0), ballRadius));
-    balls = unionSDF(balls, sphereSDF(samplePoint - vec3(0.0, 0.0, ballOffset), ballRadius));
-    balls = unionSDF(balls, sphereSDF(samplePoint + vec3(0.0, 0.0, ballOffset), ballRadius));
+vec4 sceneSDF(vec3 samplePoint) {    
+
+    vec4 plane = vec4(groundColor.rgb, planeSDF(samplePoint, vec4(1,1,1,groundPlanePos)));
+
+    float bbpm = 4.;  // beats per measure
+    float spm = bbpm*60./bpm; // seconds per measure
+    mat3 pointRotation = rotateY(spm * TIME) * rotateX(spm * TIME);
+    samplePoint = pointRotation * samplePoint;
+
+    float ball1 = sphereSDF(samplePoint - vec3(ballOffset, 0.0, 0.0), ballRadius1);
+    vec4 balls = vec4(ballColor.rgb, ball1);
+    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint + vec3(ballOffset, 0.0, 0.0), ballRadius2)));
+    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint - vec3(0.0, ballOffset, 0.0), ballRadius3)));
+    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint + vec3(0.0, ballOffset, 0.0), ballRadius4)));
+    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint - vec3(0.0, 0.0, ballOffset), ballRadius5)));
+    balls = unionSDF(balls, vec4(ballColor.rgb, sphereSDF(samplePoint + vec3(0.0, 0.0, ballOffset), ballRadius6)));
     
-    // return unionSDF(balls, csgNut);
-    return balls;
+    return unionSDF(plane, balls);
+//    return balls;
 }
 
 /**
@@ -162,11 +224,11 @@ float sceneSDF(vec3 samplePoint) {
 float shortestDistanceToSurface(vec3 eye, vec3 marchingDirection, float start, float end) {
     float depth = start;
     for (int i = 0; i < MAX_MARCHING_STEPS; i++) {
-        float dist = sceneSDF(eye + depth * marchingDirection);
-        if (dist < EPSILON) {
+        vec4 dist = sceneSDF(eye + depth * marchingDirection);
+        if (dist.w < EPSILON) {
 			return depth;
         }
-        depth += dist;
+        depth += dist.w;
         if (depth >= end) {
             return end;
         }
@@ -192,12 +254,18 @@ vec3 rayDirection(float fieldOfView, vec2 size, vec2 fragCoord) {
  * Using the gradient of the SDF, estimate the normal on the surface at point p.
  */
 vec3 estimateNormal(vec3 p) {
-    return normalize(vec3(
-        sceneSDF(vec3(p.x + EPSILON, p.y, p.z)) - sceneSDF(vec3(p.x - EPSILON, p.y, p.z)),
-        sceneSDF(vec3(p.x, p.y + EPSILON, p.z)) - sceneSDF(vec3(p.x, p.y - EPSILON, p.z)),
-        sceneSDF(vec3(p.x, p.y, p.z  + EPSILON)) - sceneSDF(vec3(p.x, p.y, p.z - EPSILON))
-    ));
+
+    float d=sceneSDF(p).w;// Distance
+    vec2 e=vec2(.01,0);// Epsilon
+     
+    vec3 n=d-vec3(
+        sceneSDF(p-e.xyy).w,
+        sceneSDF(p-e.yxy).w,
+        sceneSDF(p-e.yyx).w);
+         
+    return normalize(n);
 }
+
 
 /**
  * Lighting contribution of a single point light source via Phong illumination.
@@ -255,23 +323,15 @@ vec3 phongIllumination(vec3 k_a, vec3 k_d, vec3 k_s, float alpha, vec3 p, vec3 e
     const vec3 ambientLight = 0.5 * vec3(1.0, 1.0, 1.0);
     vec3 color = ambientLight * k_a;
     
-    vec3 light1Pos = vec3(4.0 * sin(TIME),
+    vec3 light1Pos = vec3(4.0 * sin(TIME/2.),
                           2.0,
-                          4.0 * cos(TIME));
+                          4.0 * cos(TIME/2.));
     vec3 light1Intensity = vec3(0.4, 0.4, 0.4);
     
     color += phongContribForLight(k_d, k_s, alpha, p, eye,
                                   light1Pos,
                                   light1Intensity);
     
-    vec3 light2Pos = vec3(2.0 * sin(0.37 * TIME),
-                          2.0 * cos(0.37 * TIME),
-                          2.0);
-    vec3 light2Intensity = vec3(0.4, 0.4, 0.4);
-    
-    color += phongContribForLight(k_d, k_s, alpha, p, eye,
-                                  light2Pos,
-                                  light2Intensity);    
     return color;
 }
 
@@ -291,11 +351,9 @@ mat3 viewMatrix(vec3 eye, vec3 center, vec3 up) {
 }
 
 void main() {
-
-
-
 	vec3 viewDir = rayDirection(45.0, RENDERSIZE.xy, gl_FragCoord.xy);
-    vec3 eye = vec3(8.0, 5.0 * sin(0.2 * TIME), 7.0);
+    // vec3 eye = vec3(8.0, 5.0 * sin(0.2 * TIME), 7.0);
+    vec3 eye = vec3(8.0, 5.0 * sin(0.2), 7.0);
     
     mat3 viewToWorld = viewMatrix(eye, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
     
@@ -312,8 +370,7 @@ void main() {
     // The closest point on the surface to the eyepoint along the view ray
     vec3 p = eye + dist * worldDir;
     
-    // Use the surface normal as the ambient color of the material
-    vec3 K_a = (estimateNormal(p) + vec3(1.0)) / 2.0;
+    vec3 K_a = (p + groundColor.rgb) / 2.0;
     vec3 K_d = K_a;
     vec3 K_s = vec3(1.0, 1.0, 1.0);
     float shininess = 10.0;
