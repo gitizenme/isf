@@ -86,6 +86,39 @@
             "TYPE": "color"
         },
         {
+            "DEFAULT": [
+                0.5,
+                0,
+                0,
+                1
+            ],
+            "LABEL": "Sphere 1 Color",
+            "NAME": "sphere1Color",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0,
+                0.5,
+                0,
+                1
+            ],
+            "LABEL": "Sphere 2 Color",
+            "NAME": "sphere2Color",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0,
+                0,
+                0.5,
+                1
+            ],
+            "LABEL": "Sphere 3 Color",
+            "NAME": "sphere3Color",
+            "TYPE": "color"
+        },
+        {
             "DEFAULT": 125,
             "LABEL": "Beats per Minute",
             "MAX": 1,
@@ -189,7 +222,7 @@ const vec3 black = vec3(0.,0.,0.);
 const vec3 white = vec3(1.,1.,1.);
 const vec3 gray = vec3(0.2, 0.2, 0.2);
 
-const vec4 SphereColor = vec4(0,1,0,1);
+const vec4 SphereColor = vec4(1,1,1,1);
  
 float colorIntensity = 1.;
 vec3 difColor = vec3(0., 0., 0.); // Diffuse Color
@@ -350,37 +383,34 @@ vec4 GetDist(vec3 p)
     float bbpm = 4.;  // beats per measure
     float spm = (bbpm*60./(bpm))/4.; // seconds per measure
 
-    // Sphere Color
-    vec3 sphereMixColor = mix(SphereColor.rgb * 0.3, SphereColor.rgb, abs(cos(TIME/8.) - sin(TIME/2.)));
     // Sphere
     vec3 s0p = vec3(0,sphere1Y,sphere1Z);
     s0p = p-s0p;
-    s0p.xz *= Rotate(spm * -TIME);
+    s0p.xz *= Rotate(spm * TIME);
     s0p.xy *= Rotate(spm * TIME);
-    s0p.yz *= Rotate(spm * TIME);
+    // s0p.yz *= Rotate(spm * -TIME);
     vec4 c0 = voronoi( vMult * s0p.xz, 0.5);
     float sdf0 = sphereSDF(s0p, sphere1Size);
-    sdf0 += sin(p.x*5.+TIME)*0.1 + cos(p.z*2.+TIME)*0.3;
-    vec4 s0 = vec4(c0.rgb, sdf0);
+    sdf0 += sin(s0p.x*5.+TIME)*0.1 + cos(s0p.z*2.+TIME)*0.3;
+    vec4 s0 = vec4(clamp(mix(sphere3Color.rgb, sphere1Color.rgb, abs(cos(spm * TIME) - sin(spm * TIME))), 0., 1.), sdf0);
  
-    vec3 s1p = vec3(-3,sphere2Y,sphere2Z);
+    vec3 s1p = vec3(-4.5,sphere2Y,sphere2Z);
     s1p = p-s1p;
     s1p.xz *= Rotate(spm * TIME);
     s1p.xy *= Rotate(spm * -TIME);
-    s1p.yz *= Rotate(spm * TIME);
+    // s1p.yz *= Rotate(spm * TIME);
     float sdf1 = sphereSDF(s1p, sphere2Size);
-    sdf1 += sin(p.x*5.+TIME)*0.1 - cos(p.z*2.+TIME)*0.3;
-    vec4 s1 = vec4(c0.rgb + groundColor.rgb, sdf1);
+    sdf1 += sin(s1p.x*9.+TIME)*0.1 - cos(s1p.z*6.+TIME)*0.3;
+    vec4 s1 = vec4(clamp(mix(sphere1Color.rgb, sphere2Color.rgb, abs(cos(spm * TIME) - sin(spm * TIME))), 0., 1.), sdf1);
 
-    vec3 s2p = vec3(3,sphere3Y,sphere3Z);
+    vec3 s2p = vec3(4.5,sphere3Y,sphere3Z);
     s2p = p-s2p;
     s2p.xz *= Rotate(spm * TIME);
     s2p.xy *= Rotate(spm * -TIME);
-    s2p.yz *= Rotate(spm * -TIME);
-    vec3 c2 = vec3(groundColor.r * 0.2, groundColor.g * 0.6, groundColor.b * 0.8);
+    // s2p.yz *= Rotate(spm * -TIME);
     float sdf2 = sphereSDF(s2p, sphere3Size);
-    sdf2 += sin(p.x*5.+TIME)*0.1 - cos(p.z*2.+TIME)*0.3;
-    vec4 s2 = vec4(clamp(c0.rgb + c2, 0.01, 1.), sdf2);
+    sdf2 += cos(s2p.x*10.+TIME)*0.1 - sin(s2p.z*5.+TIME)*0.3;
+    vec4 s2 = vec4( clamp(mix(sphere2Color.rgb, sphere3Color.rgb, abs(cos(spm * TIME) - sin(spm * TIME))), 0., 1.), sdf2);
 
     // Plane
     vec3 p0p = vec3(0,1,0);
