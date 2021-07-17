@@ -10,7 +10,7 @@
         {
             "DEFAULT": 1,
             "LABEL": "M1",
-            "MAX": 1,
+            "MAX": 10,
             "MIN": 0,
             "NAME": "M1",
             "TYPE": "float"
@@ -18,48 +18,56 @@
         {
             "DEFAULT": 0.9,
             "LABEL": "M2",
-            "MAX": 1,
+            "MAX": 10,
             "MIN": 0,
             "NAME": "M2",
             "TYPE": "float"
         },
         {
-            "DEFAULT": 0.5,
-            "LABEL": "R1",
-            "MAX": 1,
-            "MIN": 0,
-            "NAME": "R1",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": 0.5,
-            "LABEL": "R2",
-            "MAX": 1,
-            "MIN": 0,
-            "NAME": "R2",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": 0.5,
+            "DEFAULT": 1,
             "LABEL": "V1",
-            "MAX": 1,
-            "MIN": 0,
+            "MAX": 10,
+            "MIN": 0.01,
             "NAME": "V1",
             "TYPE": "float"
         },
         {
-            "DEFAULT": 0.95,
+            "DEFAULT": 0.9,
             "LABEL": "V2",
-            "MAX": 1,
-            "MIN": 0,
+            "MAX": 10,
+            "MIN": 0.01,
             "NAME": "V2",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "LABEL": "R1",
+            "MAX": 10,
+            "MIN": 0.01,
+            "NAME": "R1",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "LABEL": "R2",
+            "MAX": 10,
+            "MIN": 0.01,
+            "NAME": "R2",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "LABEL": "scaleFactor",
+            "MAX": 10,
+            "MIN": 0.1,
+            "NAME": "scaleFactor",
             "TYPE": "float"
         },
         {
             "DEFAULT": 0.095,
             "LABEL": "burn",
             "MAX": 1,
-            "MIN": 0.1,
+            "MIN": 0,
             "NAME": "burn",
             "TYPE": "float"
         },
@@ -100,12 +108,6 @@
 
 
 #define MAX_ITER 250
-// #define M1 1.0
-// #define M2 0.9
-// #define R1 0.5
-// #define R2 0.5
-// #define V1 0.5
-// #define V2 0.95
 
 vec2 rotate(vec2 uv, float radians)
 {
@@ -113,6 +115,12 @@ vec2 rotate(vec2 uv, float radians)
                    sin(radians), cos(radians));
  
   return uv.xy * rot;
+}
+
+vec2 scale(vec2 uv, vec2 scale)
+{
+    mat2 s = mat2(scale.x, 0.0, 0.0, scale.y);
+    return -(uv.xy * s);
 }
 
 
@@ -127,15 +135,16 @@ void main() {
 
     float timeScale = TIME / spm;
     uv = rotate(uv, timeScale / 4.);   
+    uv = scale(uv, vec2(scaleFactor, scaleFactor));
 
     vec2 z = vec2(0.0, 0.0);
 	float p = 0.0;
 	float dist = 0.0;
 
-	float x1 = tan(timeScale);
-	float y1 = sin(timeScale);
-	float x2 = tan(timeScale);
-	float y2 = sin(timeScale);
+	float x1 = tan(timeScale * V1) + R1;
+	float y1 = sin(timeScale * V1) + R1; 
+	float x2 = tan(timeScale / V2) + R2;
+	float y2 = sin(timeScale / V2) + R2;
 
 
 	for (int i=0; i < MAX_ITER; ++i)
@@ -150,20 +159,9 @@ void main() {
 
     vec4 fColor = background;
     vec4 sColor = color;
-    if(dist > blend) {
-        sColor.r = sin(timeScale / 4.);
-        sColor.g = cos(timeScale / 2.);
-        sColor.b = tan(timeScale / 16.);
-    }
-    else {
-        sColor.r = tan(timeScale / 16.);
-        sColor.g = sin(timeScale / 4.);
-        sColor.b = cos(timeScale / 2.);
-    }
-
     
     fColor += vec4(dist * sColor.r, dist * sColor.g, dist * sColor.b, 1.0);
-    fColor.rgb = clamp(vec3(0.0001), vec3(0.9999), fColor.rgb) + 0.01;
+    fColor.rgb = clamp(vec3(0.01), vec3(0.85), fColor.rgb);
 
 	gl_FragColor = fColor;
 }
