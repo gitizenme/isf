@@ -107,12 +107,12 @@
 // #define V1 0.5
 // #define V2 0.95
 
-vec2 rotate(vec2 vertex, float rads)
+vec2 rotate(vec2 uv, float radians)
 {
-  mat2 tmat = mat2(cos(rads), -sin(rads),
-                   sin(rads), cos(rads));
+  mat2 rot = mat2(cos(radians), -sin(radians),
+                   sin(radians), cos(radians));
  
-  return vertex.xy * tmat;
+  return uv.xy * rot;
 }
 
 
