@@ -11,7 +11,7 @@
             "DEFAULT": 1,
             "LABEL": "M1",
             "MAX": 10,
-            "MIN": 0,
+            "MIN": 0.01,
             "NAME": "M1",
             "TYPE": "float"
         },
@@ -19,7 +19,7 @@
             "DEFAULT": 0.9,
             "LABEL": "M2",
             "MAX": 10,
-            "MIN": 0,
+            "MIN": 0.01,
             "NAME": "M2",
             "TYPE": "float"
         },
