@@ -3,105 +3,40 @@
         "Automatically Converted",
         "Shadertoy"
     ],
-    "DESCRIPTION": "Automatically converted from https://www.shadertoy.com/view/MdX3zr by XT95.  Simple flame in distance field.",
+    "DESCRIPTION": "Automatically converted from https://www.shadertoy.com/view/MdsXWM by airtight.  Super basic audio-reactive HSL light ring. My first shader here :)",
     "IMPORTED": {
     },
     "INPUTS": [
         {
-            "DEFAULT": [
-                1,
-                0.5,
-                0.1,
-                1
-            ],
-            "LABEL": "Flame Gradient Start",
-            "NAME": "flameGradS",
-            "TYPE": "color"
+            "DEFAULT": 0,
+            "LABEL": "X Overlay",
+            "MAX": 0.5,
+            "MIN": -0.5,
+            "NAME": "xOverlay",
+            "TYPE": "float"
         },
         {
-            "DEFAULT": [
-                0.1,
-                0.5,
-                1,
-                1
-            ],
-            "LABEL": "Flame Gradient End",
-            "NAME": "flameGradE",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                0,
-                0,
-                0,
-                1
-            ],
-            "LABEL": "Background Color",
-            "NAME": "bgColor",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": 1,
-            "LABEL": "flame1Scale",
-            "MAX": 4,
-            "MIN": 0,
-            "NAME": "flame1Scale",
+            "DEFAULT": 0,
+            "LABEL": "Y Overlay",
+            "MAX": 0.5,
+            "MIN": -0.5,
+            "NAME": "yOverlay",
             "TYPE": "float"
         },
         {
             "DEFAULT": 1,
-            "LABEL": "flame2Scale",
-            "MAX": 4,
-            "MIN": 0,
-            "NAME": "flame2Scale",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": 1,
-            "LABEL": "flame3Scale",
-            "MAX": 4,
-            "MIN": 0,
-            "NAME": "flame3Scale",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": 1,
-            "LABEL": "flame1X",
-            "MAX": 4,
-            "MIN": 0,
-            "NAME": "flame1X",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": 1,
-            "LABEL": "flame2X",
-            "MAX": 4,
-            "MIN": 0,
-            "NAME": "flame2X",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": 1,
-            "LABEL": "flame3X",
-            "MAX": 4,
-            "MIN": 0,
-            "NAME": "flame3X",
-            "TYPE": "float"
-        },
-		{
-            "DEFAULT": 2.5,
-            "LABEL": "Intensity",
+            "LABEL": "Rotation Angle",
             "MAX": 10,
-            "MIN": 2.5,
-            "NAME": "intensity",
+            "MIN": -10,
+            "NAME": "rotationAngle",
             "TYPE": "float"
         },
         {
-            "DEFAULT": 1.5,
-            "LABEL": "Darkness",
-            "MAX": 3,
-            "MIN": 1.5,
-            "NAME": "darkness",
+            "DEFAULT": 0.5,
+            "LABEL": "Amplitude",
+            "MAX": 4,
+            "MIN": 0.1,
+            "NAME": "amplitude",
             "TYPE": "float"
         }
     ],
@@ -109,96 +44,68 @@
 }
 */
 
- mat2 Rotate(float a) {
-    float s=sin(a); 
-    float c=cos(a);
-    return mat2(c,-s,s,c);
+
+#define PI 3.1415
+
+const float dots = 40.; //number of lights
+const float radius = .25; //radius of light ring
+const float brightness = 0.02;
+
+mat2 rotate2d(float _angle){
+    return mat2(cos(_angle),-sin(_angle),
+                sin(_angle),cos(_angle));
 }
 
-float noise(vec3 p) //Thx to Las^Mercury
-{
-	vec3 i = floor(p);
-	vec4 a = dot(i, vec3(1., 57., 21.)) + vec4(0., 57., 21., 78.);
-	vec3 f = cos((p - i) * acos(-1.)) * (-.5) + .5;
-	a = mix(sin(cos(a) * a), sin(cos(1. + a)*(1. + a)), f.x);
-	a.xy = mix(a.xz, a.yw, f.y);
-	return mix(a.x, a.y, f.z);
+//convert HSV to RGB
+vec3 hsv2rgb(vec3 c){
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
+		
+void main() {
 
-float sphere(vec3 p, vec4 spr)
-{
-	return length(spr.xyz - p) - spr.w;
-}
-
-float flame(vec3 p)
-{
-
-
+	vec2 p = (gl_FragCoord.xy - .5 * RENDERSIZE.xy) / min(RENDERSIZE.x, RENDERSIZE.y);
+    
+    vec3 c = vec3(0, 0, 0.1); //background color
+		
 	float bpm = 58.;
     float bbpm = 4.;  // beats per measure
     float spm = (bbpm*60./(bpm))/4.; // seconds per measure
 
+    for(float i = 0.; i < dots; i++){
+	
+        float vol = amplitude * mod( vec2( i / dots, 0.0), 1.0).x;
+		float b = vol * brightness;
+		
+		//get location of dot
+        float x = radius * cos(2. * PI * float(i) / dots);
+        float y = radius * sin(2. * PI * float(i) / dots);
+        vec2 o = vec2(x, y);
 
-	float planeDist = dot(p, vec3(0, 0, 1. - darkness)) + intensity;
+        o = rotate2d( rotationAngle ) * o;
 
-	float s1 = sphere(p * vec3(flame1X, .5, 1), vec4(0, -1. * flame1Scale, 0, flame1Scale));
-	s1 += ( noise( p + vec3(.0, TIME / spm / 2., 0)) + noise(p * 3.) * .5 ) * .25 * (p.y);
+		//get color of dot based on its index in the 
+		//circle + time to rotate colors
+		vec3 dotCol = hsv2rgb(vec3((i + TIME * 20.) / dots, 0.8, 0.8));
+	    
+        //get brightness of this pixel based on distance to dot
+		c += b / (length(p - o)) * dotCol;
+    }
+	
+    // circle overlay
+    float oX = radius * cos(PI * TIME / 2.) + radius / 4.;
+    float oY = radius * sin(PI * TIME / 2.) + radius / 4.;    
 
-	float s2 = sphere(p * vec3(flame2X, .5, 1), vec4(-3., -1. * flame2Scale, 0, flame2Scale));
-	s2 += ( noise( p + vec3(.0, TIME / spm, 0)) + noise(p * 3.) * .5 ) * .25 * (p.y);
 
-	float s3 = sphere(p * vec3(flame3X, .5, 1), vec4(3., -1. * flame3Scale, .0, flame3Scale));
-	s3 += ( noise( p + vec3(.0, TIME / spm / 4., 0)) + noise(p * 3.) * .5 ) * .25 * (p.y);
+    p = rotate2d( rotationAngle ) * p * (amplitude * amplitude);
+    p += vec2(xOverlay, yOverlay) * 0.1;
+    // p.x *= cos(PI * xOverlay / 2.) + 2. * p.y;
+    // p.y *= sin(PI * yOverlay / 2.) + 1. * p.x;
+    vec2 oP = vec2(radius - radius) / 2.;
 
-
-	float d = 0.;
-	d = min(s1, planeDist);
-	d = min(d, s1);
-    d = min(d, s2);
-    d = min(d, s3);
-
-	return d;
+	float dist = distance(p, oP);  
+	c -= clamp(0.0, 0.5, smoothstep(0.01, 0.08, dist));
+	 
+	gl_FragColor = vec4(c, 1);
 }
-
-float scene(vec3 p)
-{
-	return min(100.-length(p) , abs(flame(p)) );
-}
-
-vec4 raymarch(vec3 org, vec3 dir)
-{
-	float d = 0.0, glow = 0.0, eps = 0.02;
-	vec3  p = org;
-	bool glowed = false;
-	
-	for(int i=0; i<64; i++)
-	{
-		d = scene(p) + eps;
-		p += d * dir;
-		if( d > eps )
-		{
-			if(flame(p) < .001)
-				glowed = true;
-			if(glowed)
-       			glow = float(i) / 64.;
-		}
-	}
-	return vec4(p, glow);
-}
-
-void main() {
-
-	vec2 v = -1.0 + 2.0 * gl_FragCoord.xy / RENDERSIZE.xy;
-	v.x *= RENDERSIZE.x/RENDERSIZE.y;
-	
-	vec3 org = vec3(0., -2., 4.);
-	vec3 dir = normalize(vec3(v.x * 1.6, -v.y, -1.5));
-	
-	vec4 p = raymarch(org, dir);
-	float glow = p.w;
-	
-	vec4 col = mix(vec4(flameGradS.rgb, 1.0), vec4(flameGradE.rgb, 1.0), p.y * .04 + .4);
-	
-	gl_FragColor = mix(vec4(vec3(bgColor.rgb), 0), col, pow(glow * 2., 4.));
-}
-

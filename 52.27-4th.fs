@@ -9,102 +9,6 @@
     "INPUTS": [
         {
             "DEFAULT": [
-                0,
-                0,
-                0,
-                1
-            ],
-            "LABEL": "Background Color",
-            "NAME": "backgroundColor",
-            "TYPE": "color"
-        },
-		{
-            "DEFAULT": [
-                0.975,
-                0,
-                0,
-                1
-            ],
-            "LABEL": "Circle 1 Color",
-            "NAME": "circle1Color",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                0.99,
-                0.493,
-                0,
-                1
-            ],
-            "LABEL": "Circle 2 Color",
-            "NAME": "circle2Color",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                0.955,
-                0.955,
-                0,
-                1
-            ],
-            "LABEL": "Circle 3 Color",
-            "NAME": "circle3Color",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                0,
-                0.985,
-                0,
-                1
-            ],
-            "LABEL": "Circle 4 Color",
-            "NAME": "circle4Color",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                0,
-                0,
-                0.965,
-                1
-            ],
-            "LABEL": "Circle 5 Color",
-            "NAME": "circle5Color",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                0.694,
-                0,
-                0.99,
-                1
-            ],
-            "LABEL": "Circle 6 Color",
-            "NAME": "circle6Color",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                0.571,
-                0,
-                0.99,
-                1
-            ],
-            "LABEL": "Circle 7 Color",
-            "NAME": "circle7Color",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": 125,
-            "LABEL": "Beats per Minute",
-            "MAX": 240,
-            "MIN": 1,
-            "NAME": "bpm",
-            "TYPE": "float"
-        },
-        {
-            "DEFAULT": [
                 0.01,
                 0.01
             ],
@@ -224,10 +128,10 @@
         },
         {
             "DEFAULT": [
-                0.5,
-                0.5
+                0.01,
+                0.01
             ],
-            "LABEL": "Shift Factor X",
+            "LABEL": "Circle 8 Min Max",
             "MAX": [
                 1,
                 1
@@ -236,38 +140,23 @@
                 0.01,
                 0.01
             ],
-            "NAME": "shiftFactorX",
+            "NAME": "circle8MinMax",
             "TYPE": "point2D"
-        },
-        {
-            "DEFAULT": [
-                0.5,
-                0.5
-            ],
-            "LABEL": "Shift Factor Y",
-            "MAX": [
-                1,
-                1
-            ],
-            "MIN": [
-                0.01,
-                0.01
-            ],
-            "NAME": "shiftFactorY",
-            "TYPE": "point2D"
-        },
-        {
-            "DEFAULT": 1,
-            "LABEL": "alpha",
-            "MAX": 1,
-            "MIN": 0,
-            "NAME": "alpha",
-            "TYPE": "float"
         }
     ],
     "ISFVSN": "2"
 }
 */
+
+const vec4 red = vec4(1., 0., 0., 1.);
+const vec4 white = vec4(1., 1., 1., 1.);
+const vec4 blue = vec4(0., 0., 1., 1.);
+
+const float bpm = 125.0;
+const vec2 shiftFactorX = vec2(0.5);
+const vec2 shiftFactorY = vec2(0.5);
+const float alpha = 1.0;
+const vec4 backgroundColor = vec4(0.0, 0.0, 0.0, 1.0);
 
 
 float circle(vec2 st, float pct, float minLimit, float maxLimit) {
@@ -299,6 +188,7 @@ void main() {
     float drawCircle5 = map(sin(TIME / spm), -1., 1., 0.20, 0.24);
     float drawCircle6 = map(sin(TIME / spm), -1., 1., 0.15, 0.19);
     float drawCircle7 = map(sin(TIME / spm), -1., 1., 0.10, 0.14);
+    float drawCircle8 = map(sin(TIME / spm), -1., 1., 0.05, 0.09);
     
     vec3 circle1 = vec3(circle(st, drawCircle1, circle1MinMax.x, circle1MinMax.y));
     vec3 circle2 = vec3(circle(st, drawCircle2, circle2MinMax.x, circle2MinMax.y));
@@ -307,15 +197,17 @@ void main() {
     vec3 circle5 = vec3(circle(st, drawCircle5, circle5MinMax.x, circle5MinMax.y));
     vec3 circle6 = vec3(circle(st, drawCircle6, circle6MinMax.x, circle6MinMax.y));
     vec3 circle7 = vec3(circle(st, drawCircle7, circle7MinMax.x, circle7MinMax.y));
+    vec3 circle8 = vec3(circle(st, drawCircle8, circle8MinMax.x, circle8MinMax.y));
 
     vec4 color =  
-        smoothstep(0.0, 1.0, vec4(circle1, alpha) * mix(circle1Color, circle2Color, 0.25)) +
-        smoothstep(0.0, 1.0, vec4(circle2, alpha) * mix(circle2Color, circle3Color, 0.25)) +
-        smoothstep(0.0, 1.0, vec4(circle3, alpha) * mix(circle3Color, circle4Color, 0.25)) +
-        smoothstep(0.0, 1.0, vec4(circle4, alpha) * mix(circle4Color, circle5Color, 0.25)) +
-        smoothstep(0.0, 1.0, vec4(circle5, alpha) * mix(circle5Color, circle6Color, 0.25)) +
-        smoothstep(0.0, 1.0, vec4(circle6, alpha) * mix(circle6Color, circle7Color, 0.25)) + 
-        smoothstep(0.0, 1.0, vec4(circle7, alpha) * circle7Color);
+        smoothstep(0.0, 1.0, vec4(circle1, alpha) * mix(red, white, 0.25)) +
+        smoothstep(0.0, 1.0, vec4(circle2, alpha) * mix(white, blue, 0.25)) +
+        smoothstep(0.0, 1.0, vec4(circle3, alpha) * mix(blue, red, 0.25)) +
+        smoothstep(0.0, 1.0, vec4(circle4, alpha) * mix(red, white, 0.25)) +
+        smoothstep(0.0, 1.0, vec4(circle5, alpha) * mix(white, blue, 0.25)) +
+        smoothstep(0.0, 1.0, vec4(circle6, alpha) * mix(blue, red, 0.25)) + 
+        smoothstep(0.0, 1.0, vec4(circle7, alpha) * mix(red, white, 0.25)) + 
+        smoothstep(0.0, 1.0, vec4(circle8, alpha) * mix(white, blue, 0.25));
 
 	color += backgroundColor;
 
