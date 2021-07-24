@@ -61,6 +61,17 @@
             "LABEL": "crackColor",
             "NAME": "crackColor",
             "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0.3,
+                0.3,
+                0.3,
+                1
+            ],
+            "LABEL": "backgroundColor",
+            "NAME": "backgroundColor",
+            "TYPE": "color"
         }
     ],
     "ISFVSN": "2"
@@ -111,12 +122,18 @@ vec3 Transform(vec3 p) {
 float GetDist(vec3 p) {
     p = Transform(p);
 
-    float sphere1 = sdSphere(vec3(p.x+0.5, p.y, p.z), sin(TIME * 1.25) + 2.);
-    float sphere2 = sdSphere(vec3(p.x-4.5, p.y, p.z), sin(TIME * 1.75) + 2.);
-    float sphere3 = sdSphere(vec3(p.x-4.5, p.y, p.z), sin(TIME * 1.25) + 2.);
-    float sphere4 = sdSphere(vec3(p.x-1.5, p.y, p.z), sin(TIME * 1.25) + 2.);
-    float sphere5 = sdSphere(vec3(p.x+2.5, p.y, p.z), sin(TIME * 0.25) + 2.);
-    float sphere6 = sdSphere(vec3(p.x-4.5, p.y, p.z), sin(TIME * 0.5) + 2.);
+    // float sphere1 = sdSphere(vec3(p.x+0.5, p.y, p.z), sin(TIME * 1.25) + 2.);
+    // float sphere2 = sdSphere(vec3(p.x-4.5, p.y, p.z), sin(TIME * 1.75) + 2.);
+    // float sphere3 = sdSphere(vec3(p.x-4.5, p.y, p.z), sin(TIME * 1.25) + 2.);
+    // float sphere4 = sdSphere(vec3(p.x-1.5, p.y, p.z), sin(TIME * 1.25) + 2.);
+    // float sphere5 = sdSphere(vec3(p.x+2.5, p.y, p.z), sin(TIME * 0.25) + 2.);
+    // float sphere6 = sdSphere(vec3(p.x-4.5, p.y, p.z), sin(TIME * 0.5) + 2.);
+    float sphere1 = sdSphere(vec3(p.x+0.5, p.y, p.z), 2.);
+    float sphere2 = sdSphere(vec3(p.x-4.5, p.y, p.z), 2.);
+    float sphere3 = sdSphere(vec3(p.x-4.5, p.y, p.z), 2.);
+    float sphere4 = sdSphere(vec3(p.x-1.5, p.y, p.z), 2.);
+    float sphere5 = sdSphere(vec3(p.x+2.5, p.y, p.z), 2.);
+    float sphere6 = sdSphere(vec3(p.x-4.5, p.y, p.z), 2.);
 
     sphere1 = min(sphere1, -sphere2);
     sphere1 = min(sphere2, -sphere3);
@@ -204,7 +221,7 @@ vec3 GetRayDir(vec2 uv, vec3 p, vec3 l, float z) {
 }
 
 vec3 Background(vec3 rd) {
-	vec3 color = vec3(1., 0., 0.);
+	vec3 color = vec3(0);
     float t = TIME;
     
     float y = rd.y *.5 + .5;
@@ -222,7 +239,7 @@ vec3 Background(vec3 rd) {
 
 vec3 Scene(vec2 uv) {
     float t = TIME;
-    vec3 color;
+    vec3 color = vec3(0);
 
     uv.xy *= Rotate(rotate);
     uv.xy *= Scale(vec2(4.8 - scale));
@@ -248,7 +265,7 @@ vec3 Scene(vec2 uv) {
         color += dif * dif;  
 
         float g2 = sdGyroid(p, 10.76, .03, .3);
-        color *= S(-.1, .1, g2);	// blackening
+        color *= S(-.5, .5, g2);	// blackening
 
         float crackWidth = -.02 + S(0., -.5, n.y) * .04;
         float cracks = S(crackWidth, -.03, g2);
@@ -262,11 +279,13 @@ vec3 Scene(vec2 uv) {
 
         color += g5 * materialColor.rgb;
 
-        color += S(0., -2., height) * crackColor.rgb;
+        color += S(-0., -5., height) * crackColor.rgb;
+    }
+    else {
+        color = vec3(backgroundColor);
     }
 
     color = mix(color, Background(rd), S(0.1, 0.9, d));
-    //color = Background(rd);
 
     color *= 1.-dot(uv,uv);
 
@@ -275,7 +294,7 @@ vec3 Scene(vec2 uv) {
 
 void main() {
     vec2 uv = (gl_FragCoord.xy-.5*RENDERSIZE.xy)/RENDERSIZE.y;
-    vec3 sceneColor = vec3(0);    
+    vec3 sceneColor = vec3(0.0);    
     
     sceneColor = Scene(uv);
 
