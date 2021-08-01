@@ -11,7 +11,7 @@
         {
             "DEFAULT": [
                 0,
-                0.30
+                0
             ],
             "LABEL": "position",
             "MAX": [
@@ -29,7 +29,7 @@
             "DEFAULT": 2,
             "LABEL": "scale",
             "MAX": 4.8,
-            "MIN": 3,
+            "MIN": 1,
             "NAME": "scale",
             "TYPE": "float"
         },
@@ -54,9 +54,9 @@
         },
         {
             "DEFAULT": [
-                0.3,
-                0.6,
-                0.3,
+                0.662745098,
+                0.4941176471,
+                0,
                 1
             ],
             "LABEL": "mixColor",
@@ -190,20 +190,66 @@ Surface sdPlane(vec3 p, vec3 col) {
 }
 
 Surface sdScene(vec3 p) {
-    Surface sphereLeft = sdSphere(vec3(p.x + sin(TIME * 0.1) - cos(TIME * 0.1), p.y  + cos(TIME * 0.1) - sin(TIME * 0.1), p.z), 2., vec3(-1.5, 0, -6), mix(materialColor1.rgb, mixColor.rgb, 0.5));
-    Surface sphereRight = sdSphere(vec3(p.x + sin(TIME * 0.1) - cos(TIME * 0.1), p.y  + cos(TIME * 0.1) - sin(TIME * 0.1), p.z), 1.8, vec3(1.5, 0, -5), mix(materialColor2.rgb, mixColor.rgb, 0.5));
-    Surface sphereCenter = sdSphere(vec3(p.x + sin(TIME * 0.1) - cos(TIME * 0.1), p.y  + sin(TIME * 0.1) - cos(TIME * 0.1), p.z), 1.6, vec3(0, 0, -4), mix(materialColor3.rgb, mixColor.rgb, 0.5));
-    Surface sphereTop = sdSphere(vec3(p.x + sin(TIME * 0.1) - cos(TIME * 0.1), p.y  + sin(TIME * 0.1) - cos(TIME * 0.1), p.z), 1.4, vec3(0, 1.5, -3), mix(materialColor4.rgb, mixColor.rgb, 0.5));
-    Surface sphereBottom = sdSphere(vec3(p.x + sin(TIME * 0.1) - cos(TIME * 0.1), p.y  + sin(TIME * 0.1) - cos(TIME * 0.1), p.z), 1.2, vec3(0, 1.5, -2), mix(materialColor5.rgb, mixColor.rgb, 0.5));
+
+    // Surface sphereLeft = sdSphere(vec3(p.x + sin(TIME * 0.1) - cos(TIME * 0.1), p.y  + cos(TIME * 0.1) - sin(TIME * 0.1), p.z), 2., vec3(-1.5, 0, -6), mix(materialColor1.rgb, mixColor.rgb, 0.5));
+
+    float tFactorX = sin(TIME * .25) + cos(TIME);
+    float tFactorY = sin(TIME * .25) - cos(TIME);
+    float a = atan(p.x + tFactorX, p.y + tFactorY);
+
+    float xFactor = clamp(abs(sin(a * 1. + TIME) * sin(a * 1. - TIME) * sin(a * 1. + TIME)), 0.01, 0.9) * 0.5;
+
+    // p.xy *= Rotate(rotate);
+    // p.xy *= Scale(vec2(4.8 - scale));
+
+    vec3 spLeftP = p + vec3(position.x, position.y, 0);
+    spLeftP.xy *= Rotate(rotate);
+    spLeftP.xy *= Scale(vec2(3. - scale));
+
+    vec3 spRightP = p + vec3(-position.x, position.y, 0);
+    spRightP.xy *= Rotate(-rotate);
+    spRightP.xy *= Scale(vec2(3. - scale));
+    
+    vec3 spCenterP = p;
+    spCenterP.xy *= Scale(vec2(3. - scale));
+
+    vec3 spTopP = p + vec3(position.x, -position.y, 0);
+    spTopP.xy *= Rotate(rotate);
+    spTopP.xy *= Scale(vec2(3. - scale));
+
+    vec3 spBottomP = p + vec3(-position.x, position.y, 0);
+    spBottomP.xy *= Rotate(rotate);
+    spBottomP.xy *= Scale(vec2(3. - scale));
+
+// vec3(p.x + sin(TIME * 0.1) + cos(TIME * 0.1), p.y  + cos(TIME * 0.1) - sin(TIME * 0.1), p.z)
+    vec3 c = vec3(mix(materialColor1.rgb, mixColor.rgb, 0.25));
+    c.r *= mixColor.g;
+    Surface sphereLeft = sdSphere(spLeftP, 1., vec3(-2, 0, -3), c + xFactor);
+
+    c = vec3(mix(materialColor2.rgb, mixColor.rgb, 0.25));
+    c.r *= mixColor.g;
+    Surface sphereRight = sdSphere(spRightP, 1., vec3(2, 0, -3), c + xFactor);
+
+    c = vec3(mix(materialColor3.rgb, mixColor.brg, 0.25));
+    c.r *= mixColor.g;
+    Surface sphereCenter = sdSphere(spCenterP, 1., vec3(0, 0, -3), c + xFactor);
+
+    c = vec3(mix(materialColor4.rgb, mixColor.brg, 0.25));
+    c.g *= mixColor.r;
+    Surface sphereTop = sdSphere(spTopP, 1., vec3(0, 2, -3), c + xFactor);
+
+    c = vec3(mix(materialColor5.rgb, mixColor.brg, 0.25));
+    c.b *= mixColor.r;
+    Surface sphereBottom = sdSphere(spBottomP, 1., vec3(0, -2, -3), c + xFactor);
 
     // float mixValue = distance(p, vec3(0, 0, 0));
 
     // Surface sdPlaneFloor = sdPlane(vec3(p.x, p.y, p.z), mix(vec3(1.0, 0.55, 0.0), vec3(0.226,0.000,0.615), mixValue));
     // Surface sdPlaneCeil = sdPlane(vec3(p.x, p.y, p.z), mix(vec3(1.0, 0.55, 0.0), vec3(0.226,0.000,0.615), mixValue));
 
-    Surface co = sphereLeft; // co = closest object containing "signed distance" and color
+    Surface co =  sphereCenter; // co = closest object containing "signed distance" and color
     co = opUnionColor(co, sphereRight);
-    co = opUnionColor(co, sphereCenter);
+    co = opUnionColor(co, sphereLeft);
     co = opUnionColor(co, sphereTop);
     co = opUnionColor(co, sphereBottom);
     
@@ -248,15 +294,15 @@ vec3 shader(vec2 uv) {
     float t = TIME;
     vec3 color = vec3(0);
 
-    uv.xy *= Rotate(rotate);
-    uv.xy *= Scale(vec2(4.8 - scale));
-    // uv += sin(uv * 20. + t * 0.5) * .029;
-    uv += abs(dot(sin(uv * 10. + t * 0.5), -cos(uv * 20. - t * 0.5))) * .028;
+    // uv.xy *= Rotate(rotate);
+    // uv.xy *= Scale(vec2(4.8 - scale));
+    uv += sin(uv * 20. + t * 0.5) * .029;
+    // uv += abs(dot(sin(uv * 10. + t * 0.5), -cos(uv * 10. - t * 0.5))) * .028;
     // uv += abs(dot(sin(uv * 20. + t * 0.5), -cos(uv * 20. - t * 0.5))) * .028;
 
-    vec3 ro = vec3(0, 0, 3); // ray origin that represents camera position
-    ro.yz *= Rotate(-position.y*3.14+1.);
-    ro.xz *= Rotate(-position.x*6.2831);
+    vec3 ro = vec3(0, 0, 4); // ray origin that represents camera position
+    // ro.yz *= Rotate(-position.y*3.14+1.);
+    // ro.xz *= Rotate(-position.x*6.2831);
 
     vec3 rd = normalize(vec3(uv, -1)); // ray direction
 
@@ -269,26 +315,19 @@ vec3 shader(vec2 uv) {
 
         p = Transform(p);
 
-        // Surface g4 = sdGyroid(p - t * 0.5, 4.76, .03, .0, vec3(0));
-
-        // color *= g4.color.rgb * 2. + .2 * smoothstep(.8, .0, normal.y);
-
-        // Surface g5 = sdGyroid(p - vec3(0,0,0), 3.76, .03, .0, mix(materialColor.rgb, co.color.rgb, mixValue));
-        // color += g5.color.rgb;
-
-        vec3 lightPosition = vec3(2, 2, 7);
+        vec3 lightPosition = vec3(sin(TIME) - cos(TIME) + 2., 2, 7);
         vec3 lightDirection = normalize(lightPosition - p);
 
         // Calculate diffuse reflection by taking the dot product of 
         // the normal and the light direction.
-        float dif = clamp(dot(normal, lightDirection), 0.3, 1.);
+        float dif = clamp(dot(normal, lightDirection), 0.3, 0.8);
 
         // Multiply the diffuse reflection value by an orange color and add a bit
         // of the background color to the sphere to blend it more with the background.
-        color = dif * co.color.rgb + lightColor.rgb * .02;
+        color = dif * co.color.rgb + lightColor.rgb * .002;
 
     } else {
-        color = mix(mixColor.bgr, backgroundColor.rgb, mixValue);
+        color = mix(mixColor.rgb, backgroundColor.rgb, mixValue);
     }
     return color;
 }
