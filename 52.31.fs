@@ -84,50 +84,6 @@
             "LABEL": "materialColor1",
             "NAME": "materialColor1",
             "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                1,
-                0.39215686274509803,
-                0.09803921568627451,
-                1
-            ],
-            "LABEL": "materialColor2",
-            "NAME": "materialColor2",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                1,
-                0.39215686274509803,
-                0.09803921568627451,
-                1
-            ],
-            "LABEL": "materialColor3",
-            "NAME": "materialColor3",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                1,
-                0.39215686274509803,
-                0.09803921568627451,
-                1
-            ],
-            "LABEL": "materialColor4",
-            "NAME": "materialColor4",
-            "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                1,
-                0.39215686274509803,
-                0.09803921568627451,
-                1
-            ],
-            "LABEL": "materialColor5",
-            "NAME": "materialColor5",
-            "TYPE": "color"
         }
     ]
 }
@@ -226,19 +182,19 @@ Surface sdScene(vec3 p) {
     c.r *= mixColor.g;
     Surface sphereLeft = sdSphere(spLeftP, 1., vec3(-2, 0, -3), c + xFactor);
 
-    c = vec3(mix(materialColor2.rgb, mixColor.rgb, 0.25));
+    c = vec3(mix(materialColor1.rgb, mixColor.rgb, 0.25));
     c.r *= mixColor.g;
     Surface sphereRight = sdSphere(spRightP, 1., vec3(2, 0, -3), c + xFactor);
 
-    c = vec3(mix(materialColor3.rgb, mixColor.brg, 0.25));
+    c = vec3(mix(materialColor1.rgb, mixColor.brg, 0.25));
     c.r *= mixColor.g;
     Surface sphereCenter = sdSphere(spCenterP, 1., vec3(0, 0, -3), c + xFactor);
 
-    c = vec3(mix(materialColor4.rgb, mixColor.brg, 0.25));
+    c = vec3(mix(materialColor1.rgb, mixColor.brg, 0.25));
     c.g *= mixColor.r;
     Surface sphereTop = sdSphere(spTopP, 1., vec3(0, 2, -3), c + xFactor);
 
-    c = vec3(mix(materialColor5.rgb, mixColor.brg, 0.25));
+    c = vec3(mix(materialColor1.rgb, mixColor.brg, 0.25));
     c.b *= mixColor.r;
     Surface sphereBottom = sdSphere(spBottomP, 1., vec3(0, -2, -3), c + xFactor);
 
