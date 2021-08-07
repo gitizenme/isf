@@ -155,6 +155,37 @@ vec4 differenceSDF(vec4 a, vec4 b) {
     return a.w > -b.w? a : vec4(b.rgb,-b.w);
 }
  
+/////////////////////////////
+// Smooth blending operators
+/////////////////////////////
+ 
+vec4 smoothIntersectSDF(vec4 a, vec4 b, float k ) 
+{
+  float h = clamp(0.5 - 0.5*(a.w-b.w)/k, 0., 1.);
+  vec3 c = mix(a.rgb,b.rgb,h);
+  float d = mix(a.w,b.w,h) + k*h*(1.-h);
+   
+  return vec4(c,d);
+}
+ 
+vec4 smoothUnionSDF(vec4 a, vec4 b, float k ) 
+{
+  float h = clamp(0.5 + 0.5*(a.w-b.w)/k, 0., 1.);
+  vec3 c = mix(a.rgb,b.rgb,h);
+  float d = mix(a.w, b.w, h) - k*h*(1.-h); 
+   
+  return vec4(c,d);
+}
+ 
+vec4 smoothDifferenceSDF(vec4 a, vec4 b, float k) 
+{
+  float h = clamp(0.5 - 0.5*(a.w+b.w)/k, 0., 1.);
+  vec3 c = mix(a.rgb,b.rgb,h);
+  float d = mix(a.w, -b.w, h ) + k*h*(1.-h);
+   
+  return vec4(c,d);
+}
+ 
 vec4 GetDist(vec3 p)
 {
     // Octahedron
@@ -180,11 +211,11 @@ vec4 GetDist(vec3 p)
  
     // Plane
  
-    vec3 colorA = vec3(0.149,0.141,0.912);
-    vec3 colorB = vec3(1.000,0.833,0.224);
+    vec3 colorA = vec3(0.,0.,0.);
+    vec3 colorB = vec3(1.,1.,1.);
     float pct = abs(sin(TIME/2.));
 
-    vec3 mixColor = mix(colorA, colorB, pct);
+    vec3 mixColor = mix(colorA, colorB, 0.9);
 
     vec3 p0p = vec3(0,1,0);
     p0p = p-p0p;
