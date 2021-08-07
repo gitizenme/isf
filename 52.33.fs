@@ -1,5 +1,4 @@
-/*
-{
+/*{
     "CATEGORIES": [
         "Automatically Converted",
         "Shadertoy"
@@ -8,17 +7,82 @@
     "IMPORTED": {
     },
     "INPUTS": [
-    ]
+        {
+            "DEFAULT": 0.8,
+            "LABEL": "scale1",
+            "MAX": 0.1,
+            "MIN": 1.5,
+            "NAME": "scale1",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "LABEL": "scale2",
+            "MAX": 0.1,
+            "MIN": 1.5,
+            "NAME": "scale2",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "LABEL": "scale3",
+            "MAX": 0.1,
+            "MIN": 1.5,
+            "NAME": "scale3",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.25,
+            "LABEL": "bpmFactor1",
+            "MAX": 10,
+            "MIN": 0.01,
+            "NAME": "bpmFactor1",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 4,
+            "LABEL": "focalLength",
+            "MAX": 0.1,
+            "MIN": 8,
+            "NAME": "focalLength",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "LABEL": "rotation",
+            "MAX": 6.14,
+            "MIN": -6.14,
+            "NAME": "rotation",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": [
+                0,
+                0,
+                0,
+                1
+            ],
+            "LABEL": "backgroundColor",
+            "MAX": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "MIN": [
+                0,
+                0,
+                0,
+                1
+            ],
+            "NAME": "backgroundColor",
+            "TYPE": "color"
+        }
+    ],
+    "ISFVSN": "2"
 }
-
 */
 
-
-// Made by Darko Supe (omegasbk)
-// 27.6.2021.
-// This example shows how easy it is to 
-// morph shapes using signed distance function 
-// interpolation.
 
 #define MAX_STEPS 100
 #define MAX_DIST 100.
@@ -97,32 +161,34 @@ Surface getDist(in vec3 p)
     float bbpm = 4.;  // beats per measure
     float spm = (bbpm * (bpm / 60.)) / 4.; // seconds per measure
 
-    vec3 ellipse1Pos = p;
-    ellipse1Pos.xy *= -Scale(vec2(1));
-    ellipse1Pos.xy *= Rotate(spm * 1. * TIME);
-    ellipse1Pos.xz *= -Rotate(spm * 1. * TIME);
-    vec3 ellipse1size = vec3(1, 1, 1);
-    vec3 ellipse1Color = 0.5 + 0.5 * sin(TIME * 0.5 + p.yxy + vec3(10, 1, 1) - cos(TIME * 0.5 + p.yxy + vec3(10, 1, 1)));
+    vec3 ellipse1Pos = p + vec3(0, scale1 - 1.5, 0);
+    ellipse1Pos.xy *= Scale(vec2(scale1));
+    ellipse1Pos.xy *= Rotate(spm * bpmFactor1 * TIME);
+    ellipse1Pos.xz *= Rotate(spm * bpmFactor1 * TIME);
+    vec3 ellipse1size = vec3(1. + scale1, 1. + scale1, 1);
+    vec3 ellipse1Color = 0.75 + 0.5 * sin(TIME * 0.5 + p.yxy + vec3(10, 1, 1) - cos(TIME * 0.5 + p.yxy + vec3(10, 1, 1)));
     float ellipse1Distance = sdEllipsoid(ellipse1Pos, ellipse1size);
     ellipse1Distance += sin(ellipse1Pos.x * 3. + TIME * spm) * 0.333 + cos(ellipse1Pos.y * 2. + TIME * spm) * 0.444;
     Surface ellipse1 = Surface(ellipse1Distance, ellipse1Color);
 
-    vec3 ellipse2Pos = p + vec3(-0.25, 0, 0);
-    ellipse2Pos.xy *= Rotate(spm * .25 * TIME);
-    ellipse2Pos.xz *= -Rotate(spm * .25 * TIME);
-    vec3 ellipse2size = vec3(1, 1, 0.5);
-    vec3 ellipse2Color = 0.5 + 0.5 * sin(TIME * 0.5 + p.yxy + vec3(1, 10, 1) - cos(TIME * 0.5 + p.yxy + vec3(1, 10, 1)));
+    vec3 ellipse2Pos = p + vec3(1.5, scale2 - 1.5, 0);
+    ellipse2Pos.xy *= Scale(vec2(scale2));
+    ellipse2Pos.xy *= -Rotate(spm * bpmFactor1 * TIME);
+    ellipse2Pos.xz *= Rotate(spm * bpmFactor1 * TIME);
+    vec3 ellipse2size = vec3(1. + scale2, 1. + scale2, 1);
+    vec3 ellipse2Color = 0.75 + 0.5 * sin(TIME * 0.5 + p.yxy + vec3(1, 10, 1) - cos(TIME * 0.5 + p.yxy + vec3(1, 10, 1)));
     float ellipse2Distance = sdEllipsoid(ellipse2Pos, ellipse2size);
-    ellipse2Distance += sin(ellipse2Pos.x * 1.9 + TIME * spm) * 0.555 - cos(ellipse2Pos.y * 1.5 + TIME * spm) * 0.444;
+    ellipse2Distance += sin(ellipse2Pos.x * 1.9 + TIME * spm) * 0.368 + cos(ellipse2Pos.y * 1.5 + TIME * spm) * 0.555;
     Surface ellipse2 = Surface(ellipse2Distance, ellipse2Color);
     
-    vec3 ellipse3Pos = p + vec3(0.25, 0, 0);
-    ellipse2Pos.xy *= -Rotate(spm * .25 * TIME);
-    ellipse2Pos.xz *= -Rotate(spm * .25 * TIME);
-    vec3 ellipse3size = vec3(1, 1, 1);
-    vec3 ellipse3Color = 0.5 + 0.5 * sin(TIME * 0.5 + p.yxy + vec3(1, 1, 10) - cos(TIME * 0.5 + p.yxy + vec3(1, 1, 10)));
+    vec3 ellipse3Pos = p + vec3(-1.5, scale3 - 1.5, 0);
+    ellipse3Pos.xy *= Scale(vec2(scale3));
+    ellipse3Pos.xy *= -Rotate(spm * bpmFactor1 * TIME);
+    ellipse3Pos.xz *= -Rotate(spm * bpmFactor1 * TIME);
+    vec3 ellipse3size = vec3(1. + scale3, 1. + scale3, 1);
+    vec3 ellipse3Color = 0.75 + 0.5 * sin(TIME * 0.5 + p.yxy + vec3(1, 1, 10) - cos(TIME * 0.5 + p.yxy + vec3(1, 1, 10)));
     float ellipse3Distance = sdEllipsoid(ellipse3Pos, ellipse3size);
-    ellipse3Distance += sin(ellipse3Pos.x * 3. + TIME * spm) * 0.333 + cos(ellipse3Pos.y * 2. + TIME * spm) * 0.444;
+    ellipse3Distance += sin(ellipse3Pos.x * 3. + TIME * spm) * 0.123 + cos(ellipse3Pos.y * 2. + TIME * spm) * 0.345;
     Surface ellipse3 = Surface(ellipse3Distance, ellipse3Color);
 
     Surface s = ellipse1;
@@ -171,14 +237,14 @@ vec3 getLight(in vec3 p, in vec3 rd)
 	vec3 normal = getNormal(p);
     vec3 lightDir = normalize(p - lightPosition);
     
-    float cosa = pow(0.5+0.5*dot(normal, -lightDir), 3.0);
+    float cosa = pow(0.5 + 0.5 * dot(normal, -lightDir), 3.0);
     float cosr = max(dot(-rd, reflect(lightDir, normal)), 0.0);
     
-    vec3 ambiant = vec3(0.42);
-    vec3 diffuse = vec3(0.8 * cosa);
-    vec3 phong = vec3(0.5 * pow(cosr, 16.0));
+    vec3 ambient = vec3(0.62);
+    vec3 diffuse = vec3(0.5 * cosa);
+    vec3 phong = vec3(1.5 * pow(cosr, 16.0));
     
-    return lightColor * (ambiant + diffuse + phong);
+    return lightColor * (ambient + diffuse + phong);
 }
 
 void main() {
@@ -189,9 +255,12 @@ void main() {
     vec3 ro = vec3(0., 0., 0.);
     
     // Camera movement
-    float focalLength = 4.;
-    float rotation = TIME / 2.;
-    ro = vec3(0, 0, 1) * focalLength;
+    // float focalLength = 4.;
+    // float rotation = TIME / 2.;
+    ro = vec3(0., 0., 1.) * focalLength;
+    ro.xy *= Rotate(rotation);
+    ro.xz *= Rotate(rotation);
+    ro.yz *= Rotate(rotation);
     vec3 rd = normalize(vec3(0.) - ro);
     vec3 right = normalize(cross(rd, vec3(0., 1., 0.)));
     vec3 up = cross(right, rd);
@@ -199,15 +268,18 @@ void main() {
         
     Surface s = rayMarch(ro, rd);
     col = s.color;
+    vec3 p = ro + rd * s.signedDistance;   
+    // vec3 n = getNormal(p);
+    
     if (s.signedDistance < MAX_DIST)
     {
-        vec3 p = ro + rd * s.signedDistance;   
-        vec3 n = getNormal(p);
         col *= vec3(getLight(p, rd)) * 2.; 
     }
     else
     {
-        col = 0.15 + 0.5 * mix(vec3(.2), vec3(0.8), uv.yyy);
+        vec3 colA = 0.5 + 0.5 * mix(vec3(0), backgroundColor.rgb, uv.yyy);
+        vec3 colB = 0.5 + 0.5 * cos(TIME * bpmFactor1 + uv.yyy + vec3(0,2,4));
+        col = mix(colA, colB, 0.5);
     }
     
     // Output to screen
