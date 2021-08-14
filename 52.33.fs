@@ -56,7 +56,7 @@
             "TYPE": "float"
         },
         {
-            "DEFAULT": 0,
+            "DEFAULT": 0.01,
             "LABEL": "Background Factor",
             "MAX": 30,
             "MIN": -30,
@@ -279,7 +279,7 @@ Surface getDist(in vec3 p)
     ellipse1Pos.xz *= Scale(vec2(scale));
     ellipse1Pos.yz *= Scale(vec2(scale));
     vec3 ellipse1size = vec3(1, 1, 0.75);
-    vec3 ellipse1Color = 0.5 + 0.5 * sin(TIME * spm / 4. + p.xyx + vec3(5, 2, 0)) - cos(TIME * spm / 4. + p.xyx + vec3(2, 0, 5));
+    vec3 ellipse1Color = 0.5 + 0.5 * sin(TIME * spm / 4. + p.xyx + vec3(shapeColor.r * 5., shapeColor.g * 2., shapeColor.g * 1.)) - cos(TIME * spm / 4. + p.xyx + vec3(shapeColor.r * 2., shapeColor.g * 1., shapeColor.g * 5.));
     // vec3 ellipse1Color = vec3(0, 0.2, 1);
     // float ellipse1Distance = abs(sdEllipsoid(ellipse1Pos, ellipse1size)) - 0.1; // shell
     float ellipse1Distance = sdEllipsoid(ellipse1Pos, ellipse1size);
