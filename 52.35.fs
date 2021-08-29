@@ -415,21 +415,21 @@ vec3 render( in vec3 ro, in vec3 rd, float time )
         { 
             ks = 0.5 + pos.y * .15;
 
-            col = shapeColor.grb;
-            col = mix(col, vec3(0), 0.8);
+            col = skyColor.rgb;
+            col = mix(col, vec3(0), 0.7);
         }
         else if(res.y > 2.5) // body
         { 
             ks = 0.5 + pos.y * .15;
 
-            col = shapeColor.bgr;
+            col = shapeColor.rgb;
             col = mix(col, vec3(0), 0.8);
         }
         else if(res.y > 1.5) // body
         { 
             ks = 0.5 + pos.y * 0.15;
 
-            col = shapeColor.rgb;
+            col = groundColor.rgb;
             col = mix(col, vec3(0), 0.8);
 
             // col = mix(col, groundColor.rgb, (1.0-res.z)*smoothstep(-0.15, 0.25, -href));
