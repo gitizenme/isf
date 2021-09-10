@@ -238,7 +238,7 @@ vec4 map( in vec3 pos, float atime )
     xx = r.x - 0.2 - .5 * r.z * r.z;
     yy = r.y - 0.2 - .5 * r.x * r.x;
     w = 0.009 * cos(yy * wrinkles) * cos(xx * wrinkles) * (2.0 - smoothstep(0.1, 0.9, abs(yy)));
-    vec3 deli2Pos = r - vec3(w - 1., elevation + fh * 2., -2); // - cen;
+    vec3 deli2Pos = r - vec3(w, elevation + fh, 0; // - cen;
     deli2Pos.xy *= rotate(sin(TIME));
     deli2Pos.xz *= rotate(sin(TIME));
     float deli2 = sdEllipsoid(deli2Pos, scale * vec3(2, 1.5, 0.5));
