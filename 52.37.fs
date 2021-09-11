@@ -104,12 +104,43 @@
             "TYPE": "float"
         },
         {
+            "DEFAULT": 0,
+            "LABEL": "rotation",
+            "MAX": 6.28,
+            "MIN": -6.28,
+            "NAME": "rotation",
+            "TYPE": "float"
+        },
+        {
             "DEFAULT": 0.0073,
             "LABEL": "cut",
             "MAX": 0.05,
             "MIN": 0.001,
             "NAME": "cut",
             "TYPE": "float"
+        },
+        {
+            "DEFAULT": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "LABEL": "color",
+            "MAX": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "MIN": [
+                0,
+                0,
+                0,
+                1
+            ],
+            "NAME": "color",
+            "TYPE": "color"
         }
     ],
     "ISFVSN": "2"
@@ -130,6 +161,12 @@
 // float lumi = 0.3; // 0.3
 // float numPlots = 30.; // 30.
 // float cut = 0.0073; // 0.0073
+
+mat2 rotate(float a) {
+    float s = sin(a);
+    float c = cos(a);
+    return mat2(c, -s, s, c);
+}
 
 vec4 permute(vec4 x) {
     return mod(((x * smoothing) + 1.) * x, permuteRate);
@@ -223,6 +260,7 @@ float plot(vec2 st, float pct){
 void main() {
 
     vec2 uv =(gl_FragCoord.xy - 0.5 * RENDERSIZE.xy)/RENDERSIZE.y; // -uvPos <> uvPos
+    uv *= rotate(rotation);
     vec3 col = vec3(0.);
     for (float i = 0.; i < numPlots; i += 1.) {
         float inc = i / numPlots;
@@ -233,7 +271,7 @@ void main() {
 
         float l = plot(uv * uvPos, 0.13 * cnoise(P));
 
-        vec3 c = mix(vec3(1., uv.x + uvPos, 1. - uv.x), vec3(uv.x + uvPos, .2, uvPos - uv.x), inc);
+        vec3 c = mix(vec3(color.r, uv.x + uvPos * color.g, 1. - uv.x * color.b), vec3(uv.x + uvPos, color.g, uvPos - uv.x), inc);
 
         col += vec3(l * c * lumi);
     }
