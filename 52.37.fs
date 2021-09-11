@@ -1,5 +1,4 @@
-/*
-{
+/*{
     "CATEGORIES": [
         "Automatically Converted",
         "Shadertoy"
@@ -8,25 +7,129 @@
     "IMPORTED": {
     },
     "INPUTS": [
-    ]
+        {
+            "DEFAULT": 28.9,
+            "LABEL": "permuteRate",
+            "MAX": 50,
+            "MIN": -50,
+            "NAME": "permuteRate",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 7,
+            "LABEL": "gFactor",
+            "MAX": 50,
+            "MIN": -50,
+            "NAME": "gFactor",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 2.2,
+            "LABEL": "fadeFactor",
+            "MAX": 5,
+            "MIN": -5,
+            "NAME": "fadeFactor",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 2.2,
+            "LABEL": "amp",
+            "MAX": 5,
+            "MIN": -5,
+            "NAME": "amp",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 34,
+            "LABEL": "smoothing",
+            "MAX": 50,
+            "MIN": -50,
+            "NAME": "smoothing",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.5,
+            "LABEL": "xPos",
+            "MAX": 1,
+            "MIN": -1,
+            "NAME": "xPos",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.2,
+            "LABEL": "yPos",
+            "MAX": 1,
+            "MIN": -1,
+            "NAME": "yPos",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.02,
+            "LABEL": "zPos",
+            "MAX": 1,
+            "MIN": -1,
+            "NAME": "zPos",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.5,
+            "LABEL": "yPosNoise",
+            "MAX": 3,
+            "MIN": -1,
+            "NAME": "yPosNoise",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.5,
+            "LABEL": "uvPos",
+            "MAX": 3,
+            "MIN": -3,
+            "NAME": "uvPos",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.3,
+            "LABEL": "lumi",
+            "MAX": 1.01,
+            "MIN": 0.09,
+            "NAME": "lumi",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 30,
+            "LABEL": "numPlots",
+            "MAX": 100,
+            "MIN": 1,
+            "NAME": "numPlots",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.0073,
+            "LABEL": "cut",
+            "MAX": 0.05,
+            "MIN": 0.001,
+            "NAME": "cut",
+            "TYPE": "float"
+        }
+    ],
+    "ISFVSN": "2"
 }
-
 */
 
 
-float permuteRate = 289. * 1.; // 289.
-float gFactor = 7.; // 7.
-float fadeFactor = 2.2; // 2.2
-float amp = 2.2; // 2.2
-float smoothing = 1.; // 34.0
-float xPos = .5; // 0.5
-float yPos = .2; // 0.2
-float yPosNoise = .5; // 0.5
-float uvPos = 0.5; // 0.5
-float lumi = 0.3; // 0.3
-float numPlots = 30.; // 30.
-float zPos = 0.02; // 0.02
-float cut = 0.0073; // 0.0073
+// float permuteRate = 289.; // 289.
+// float gFactor = 7.; // 7.
+// float fadeFactor = 2.2; // 2.2
+// float amp = 2.2; // 2.2
+// float smoothing = 34.; // 34.0
+// float xPos = .5; // 0.5
+// float yPos = .2; // 0.2
+// float zPos = 0.02; // 0.02
+// float yPosNoise = .5; // 0.5
+// float uvPos = 0.5; // 0.5
+// float lumi = 0.3; // 0.3
+// float numPlots = 30.; // 30.
+// float cut = 0.0073; // 0.0073
 
 vec4 permute(vec4 x) {
     return mod(((x * smoothing) + 1.) * x, permuteRate);
