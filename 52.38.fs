@@ -8,6 +8,30 @@
     },
     "INPUTS": [
         {
+            "DEFAULT": 2.7,
+            "LABEL": "rayDistance",
+            "MAX": 100,
+            "MIN": 0.5,
+            "NAME": "rayDistance",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": -0.1,
+            "LABEL": "rotationAngle",
+            "MAX": 3.14,
+            "MIN": -3.14,
+            "NAME": "rotationAngle",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.4,
+            "LABEL": "yRotation",
+            "MAX": 3.14,
+            "MIN": -3.14,
+            "NAME": "yRotation",
+            "TYPE": "float"
+        },
+        {
             "DEFAULT": [
                 0.1031,
                 0.11369
@@ -26,8 +50,8 @@
         },
         {
             "DEFAULT": [
-                0.1,
-                0.1
+                0,
+                0
             ],
             "LABEL": "timeScale",
             "MAX": [
@@ -40,14 +64,6 @@
             ],
             "NAME": "timeScale",
             "TYPE": "point2D"
-        },
-        {
-            "DEFAULT": 19.19,
-            "LABEL": "p3Factor",
-            "MAX": 100,
-            "MIN": 0,
-            "NAME": "p3Factor",
-            "TYPE": "float"
         },
         {
             "DEFAULT": [
@@ -71,6 +87,29 @@
             ],
             "NAME": "materialColor",
             "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0.1,
+                0.1,
+                0.9,
+                1
+            ],
+            "LABEL": "keyLightColor",
+            "MAX": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "MIN": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "NAME": "keyLightColor",
+            "TYPE": "color"
         }
     ],
     "ISFVSN": "2"
@@ -78,6 +117,22 @@
 */
 
 // vec3 materialColor = vec3(0.6,0.3,0.1);
+// vec3 keyLightColor = vec3(1.0,0.5,0.6);
+// float rayDistance = 2.7;
+// float rotationAngle = -0.1;
+// float yRotation = 0.4;
+float specFactor = 0.04;
+
+// {
+//             "DEFAULT": 19.19,
+//             "LABEL": "p3Factor",
+//             "MAX": 100,
+//             "MIN": 0,
+//             "NAME": "p3Factor",
+//             "TYPE": "float"
+//         },
+
+float p3Factor = 19.19;
 
 // The MIT License
 // Copyright © 2019 Inigo Quilez
@@ -99,18 +154,16 @@
 
 
 
-// 0 = lattice
-// 1 = simplex
-#define NOISE 0
 
 #define MOD3 vec3(.1031,.11369,.13787)
 
 
 float hash31(vec3 p3)
 {
-    vec3 mod = vec3(cos(mod.x) + sin(mod.y), sin(mod.y) + cos(mod.x), sin(mod.xy) + cos(mod.yx));
-    mod.xy *= TIME * timeScale * 0.00001;
-	p3  = fract(p3 * mod);
+    vec3 modLocal = vec3(mod.x, mod.y, mod.x * mod.y);
+    modLocal.xy *= timeScale * 0.00001;
+    // modLocal.yz *= timeScale * 0.00001;
+	p3  = fract(p3 * modLocal);
     p3 += dot(p3, p3.yzx + p3Factor);
     return fract((p3.x + p3.y) * p3.z);
 }
@@ -118,6 +171,11 @@ float hash31(vec3 p3)
 float hash(vec3 p)  
 {
     return hash31(p);
+}
+
+float sdSphere( vec3 p, float s )
+{
+    return length(p)-s;
 }
 
 // http://iquilezles.org/www/articles/distfunctions/distfunctions.htm
@@ -151,6 +209,11 @@ vec2 iBox( in vec3 ro, in vec3 rd, in vec3 rad )
 //---------------------------------------------------------------
 // A random SDF - it places spheres of random sizes in a grid
 //---------------------------------------------------------------
+
+// 0 = lattice
+// 1 = simplex
+#define NOISE 1
+
 
 float sdBase( in vec3 p )
 {
@@ -189,7 +252,7 @@ float sdBase( in vec3 p )
     float r2 = hash(i + i2);
     float r3 = hash(i + 1.0);
 
-    #define SPH(d, r) length(d) -r *r * 0.55
+    #define SPH(d, r) length(d) -r * r * 0.55
 
     return min( min(SPH(d0, r0),
                     SPH(d1, r1)),
@@ -223,7 +286,10 @@ vec2 sdFbm( in vec3 p, float d )
 vec2 map( in vec3 p )
 {
     // box 
-    float d = sdBox(p, vec3(1.0));
+    // float d = sdBox(p, vec3(1.0));
+
+    // sphere
+    float d = sdSphere(p, 1.);
 
     // fbm
     vec2 dt = sdFbm( p+0.5, d);
@@ -240,7 +306,7 @@ vec2 raycast( in vec3 ro, in vec3 rd )
 	vec2 res = vec2(-1.0);
 
     // bounding volume    
-    vec2 dis = iBox( ro, rd, vec3(1.0) ) ;
+    vec2 dis = iBox( ro, rd, vec3(3.0) ) ;
     if( dis.y<0.0 ) return res;
 
     // raymarch
@@ -303,6 +369,9 @@ float calcSoftShadow(vec3 ro, vec3 rd, float tmin, float tmax, float w)
 
 #define ZERO min(FRAMEINDEX,0)
 
+float dist(vec2 p0, vec2 pf){return sqrt((pf.x-p0.x)*(pf.x-p0.x)+(pf.y-p0.y)*(pf.y-p0.y));}
+
+
 void main() {
 
 
@@ -322,37 +391,38 @@ void main() {
 #endif
    
         // camera anim
-        float an = -0.1 * TIME;
-        vec3 ro = 4.0*vec3( cos(an), 0.4, sin(an) );
-        vec3 ta = vec3( 0.0, -0.35, 0.0 );
+        float an = rotationAngle; // * sin(TIME);
+        vec3 ro = 3.0 * vec3( cos(an), yRotation, sin(an) );
+        vec3 ta = vec3( 0.0, 0.0, 0.0 );
         // camera matrix	
         vec3  cw = normalize( ta-ro );
         vec3  cu = normalize( cross(cw,vec3(0.0,1.0,0.0)) );
         vec3  cv = normalize( cross(cu,cw) );
-        vec3  rd = normalize( p.x*cu + p.y*cv + 2.7*cw );
+        vec3  rd = normalize( p.x*cu + p.y*cv + rayDistance * cw );
         // render
-        vec3 col = vec3(0.01);
+        float colorD = dist(RENDERSIZE.xy * 0.5, gl_FragCoord.xy) * ((sin(TIME * 0.5) - rayDistance + 2.5)) * 0.003;
+        vec3 col = vec3(mix(keyLightColor.rgb, vec3(0.), colorD));
         vec2 tm = raycast( ro, rd );
         float t = tm.x;
         if( t>0.0 )
         {
             vec3  pos = ro + t*rd;
             vec3  nor = calcNormal( pos );
-            float occ = tm.y*tm.y;
+            float occ = tm.y * tm.y;
             // material
-            vec3 mate = mix( materialColor.rgb, vec3(1), tm.y )*0.7;
+            vec3 mate = mix( materialColor.rgb, vec3(1), tm.y ) * 0.7;
             // key light
             {
-            vec3 lig = normalize(vec3(1.0,0.5,0.6));
+            vec3 lig = normalize(keyLightColor.rgb);
             float dif = dot(lig,nor);
             if( dif>0.0 ) dif *= calcSoftShadow(pos+nor*0.001,lig,0.001,10.0,0.003);
             dif = clamp(dif,0.0,1.0);
             vec3 hal = normalize(lig-rd);
             float spe = clamp(dot(hal,nor),0.0,1.0);
-            spe = pow(spe,4.0)*dif*(0.04+0.96*pow(max(1.0-dot(hal,lig),0.0),5.0));
+            spe = pow(spe,4.0)*dif*(specFactor + 0.96 * pow(max(1.0 - dot(hal,lig), 0.0), 5.0));
             col = vec3(0.0);
-            col += mate*1.5*vec3(1.30,0.85,0.75)*dif;
-            col +=      9.0*spe;
+            col += mate * 0.5 * vec3(materialColor.r * 1.30, materialColor.g * 0.85, materialColor.b * 0.75) * dif;
+            col += 9.0 * spe;
             }
             // ambient light
             {
@@ -360,10 +430,10 @@ void main() {
             }
         }
         // tonemap
-        col = col*1.7/(1.0+col);
+        col = col * 1.7 / (1.0 + col);
         
         // gamma
-        col = pow(col,vec3(0.4545));
+        col = pow(col, vec3(0.4545));
         
         tot += col;
 #if AA>1
@@ -371,8 +441,8 @@ void main() {
     tot /= float(AA*AA);
 #endif
     // vignetting
-    vec2 q = gl_FragCoord.xy/RENDERSIZE.xy;
-    tot *= 0.7 + 0.3*pow(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.2);
+    vec2 q = gl_FragCoord.xy / RENDERSIZE.xy;
+    tot *= 0.7 + 0.3 * pow(16.0 * q.x * q.y * (1.0 - q.x) * (1.0 - q.y), 0.2);
     
     // cheap dithering
     tot += sin(gl_FragCoord.x*114.0)*sin(gl_FragCoord.y*211.1)/512.0;
