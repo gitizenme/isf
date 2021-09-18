@@ -1,5 +1,4 @@
-/*
-{
+/*{
     "CATEGORIES": [
         "Automatically Converted",
         "Shadertoy"
@@ -8,11 +7,77 @@
     "IMPORTED": {
     },
     "INPUTS": [
-    ]
+        {
+            "DEFAULT": [
+                0.1031,
+                0.11369
+            ],
+            "LABEL": "mod",
+            "MAX": [
+                1,
+                1
+            ],
+            "MIN": [
+                0,
+                0
+            ],
+            "NAME": "mod",
+            "TYPE": "point2D"
+        },
+        {
+            "DEFAULT": [
+                0.1,
+                0.1
+            ],
+            "LABEL": "timeScale",
+            "MAX": [
+                10,
+                10
+            ],
+            "MIN": [
+                0.01,
+                0.01
+            ],
+            "NAME": "timeScale",
+            "TYPE": "point2D"
+        },
+        {
+            "DEFAULT": 19.19,
+            "LABEL": "p3Factor",
+            "MAX": 100,
+            "MIN": 0,
+            "NAME": "p3Factor",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": [
+                0.6,
+                0.3,
+                0.1,
+                1
+            ],
+            "LABEL": "materialColor",
+            "MAX": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "MIN": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "NAME": "materialColor",
+            "TYPE": "color"
+        }
+    ],
+    "ISFVSN": "2"
 }
-
 */
 
+// vec3 materialColor = vec3(0.6,0.3,0.1);
 
 // The MIT License
 // Copyright © 2019 Inigo Quilez
@@ -38,62 +103,18 @@
 // 1 = simplex
 #define NOISE 0
 
-float rand(float n){return fract(sin(n) * 43758.5453123);}
+#define MOD3 vec3(.1031,.11369,.13787)
 
-float rand(vec2 n) { 
-	return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+
+float hash31(vec3 p3)
+{
+    vec3 mod = vec3(cos(mod.x) + sin(mod.y), sin(mod.y) + cos(mod.x), sin(mod.xy) + cos(mod.yx));
+    mod.xy *= TIME * timeScale * 0.00001;
+	p3  = fract(p3 * mod);
+    p3 += dot(p3, p3.yzx + p3Factor);
+    return fract((p3.x + p3.y) * p3.z);
 }
 
-float hash11x(float p){
-	float fl = floor(p);
-  float fc = fract(p);
-	return mix(rand(fl), rand(fl + 1.0), fc);
-}
-	
-float hash11(vec2 n) {
-	const vec2 d = vec2(0.0, 1.0);
-  vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
-	return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);
-}
-
-float hash21(vec2 p){
-	vec2 ip = floor(p);
-	vec2 u = fract(p);
-	u = u*u*(3.0-2.0*u);
-	
-	float res = mix(
-		mix(rand(ip),rand(ip+vec2(1.0,0.0)),u.x),
-		mix(rand(ip+vec2(0.0,1.0)),rand(ip+vec2(1.0,1.0)),u.x),u.y);
-	return res*res;
-}
-
-float mod289(float x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
-vec4 mod289(vec4 x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
-vec4 perm(vec4 x){return mod289(((x * 34.0) + 1.0) * x);}
-
-float hash31(vec3 p){
-    vec3 a = floor(p);
-    vec3 d = p - a;
-    d = d * d * (3.0 - 2.0 * d);
-
-    vec4 b = a.xxyy + vec4(0.0, 1.0, 0.0, 1.0);
-    vec4 k1 = perm(b.xyxy);
-    vec4 k2 = perm(k1.xyxy + b.zzww);
-
-    vec4 c = k2 + a.zzzz;
-    vec4 k3 = perm(c);
-    vec4 k4 = perm(c + 1.0);
-
-    vec4 o1 = fract(k3 * (1.0 / 41.0));
-    vec4 o2 = fract(k4 * (1.0 / 41.0));
-
-    vec4 o3 = o2 * d.z + o1 * (1.0 - d.z);
-    vec2 o4 = o3.yw * d.x + o3.xz * (1.0 - d.x);
-
-    return o4.y * d.y + o4.x * (1.0 - d.y);
-}
-
-// please, do not use in real projects - replace this by something better
 float hash(vec3 p)  
 {
     return hash31(p);
@@ -201,7 +222,7 @@ vec2 sdFbm( in vec3 p, float d )
 
 vec2 map( in vec3 p )
 {
-    // box
+    // box 
     float d = sdBox(p, vec3(1.0));
 
     // fbm
@@ -288,7 +309,7 @@ void main() {
 
     vec3 tot = vec3(0.0);
     
-    #if AA>1
+#if AA>1
     for( int m=ZERO; m<AA; m++ )
     for( int n=ZERO; n<AA; n++ )
     {
@@ -298,10 +319,10 @@ void main() {
         float d = 0.5*sin(gl_FragCoord.x*147.0)*sin(gl_FragCoord.y*131.0);
         #else    
         vec2 p = (2.0*gl_FragCoord.xy-RENDERSIZE.xy)/RENDERSIZE.y;
-        #endif
+#endif
    
         // camera anim
-        float an = -0.1*TIME;
+        float an = -0.1 * TIME;
         vec3 ro = 4.0*vec3( cos(an), 0.4, sin(an) );
         vec3 ta = vec3( 0.0, -0.35, 0.0 );
         // camera matrix	
@@ -319,7 +340,7 @@ void main() {
             vec3  nor = calcNormal( pos );
             float occ = tm.y*tm.y;
             // material
-            vec3 mate = mix( vec3(0.6,0.3,0.1), vec3(1), tm.y )*0.7;
+            vec3 mate = mix( materialColor.rgb, vec3(1), tm.y )*0.7;
             // key light
             {
             vec3 lig = normalize(vec3(1.0,0.5,0.6));
@@ -345,10 +366,10 @@ void main() {
         col = pow(col,vec3(0.4545));
         
         tot += col;
-	#if AA>1
+#if AA>1
     }
     tot /= float(AA*AA);
-    #endif
+#endif
     // vignetting
     vec2 q = gl_FragCoord.xy/RENDERSIZE.xy;
     tot *= 0.7 + 0.3*pow(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.2);
