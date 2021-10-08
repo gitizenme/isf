@@ -1,5 +1,4 @@
-/*
-{
+/*{
     "CATEGORIES": [
         "Bezier",
         "Particle"
@@ -8,18 +7,76 @@
     "IMPORTED": {
     },
     "INPUTS": [
-    ]
+        {
+            "DEFAULT": 0.5,
+            "LABEL": "scale",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "scale",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.25,
+            "LABEL": "speed",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "speed",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 20,
+            "LABEL": "intensity",
+            "MAX": 100,
+            "MIN": 0,
+            "NAME": "intensity",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.5,
+            "LABEL": "length",
+            "MAX": 6.28,
+            "MIN": 0,
+            "NAME": "length",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.02,
+            "LABEL": "radius",
+            "MAX": 0.1,
+            "MIN": 0,
+            "NAME": "radius",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.125,
+            "LABEL": "fading",
+            "MAX": 0,
+            "MIN": 0.25,
+            "NAME": "fading",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 4,
+            "LABEL": "glow",
+            "MAX": 0,
+            "MIN": 10,
+            "NAME": "glow",
+            "TYPE": "float"
+        }
+    ],
+    "ISFVSN": "2"
 }
-
 */
 
-float SCALE = 0.5;
-float SPEED = 0.25;
-float INTENSITY = 20.0;
-float LENGTH = 0.5;
-float RADIUS = 0.020;
-float FADING = 0.125;
-float GLOW = 4.0;
+#define SCALE scale // = 0.5;
+#define SPEED speed // = 0.25;
+#define INTENSITY intensity // = 20.0;
+#define LENGTH length // = 0.5;
+#define RADIUS radius // = 0.020;
+#define FADING fading // = 0.125;
+#define GLOW glow // = 4.0;
+
+
 
 #define M_2_PI 6.28318530
 
@@ -103,7 +160,6 @@ float mapcircle(vec2 pos,float sp){
 }
 
 void main() {
-
     vec2 uv = (2. * gl_FragCoord.xy - RENDERSIZE.xy) / RENDERSIZE.y;
 	
     float dist1 = mapcircle(uv.yx*vec2(1.0,0.66),1.0);
