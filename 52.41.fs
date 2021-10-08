@@ -120,8 +120,7 @@ vec2 leminiscate(float t){
     return vec2(x, y);
 }
 
-// inspired by https://www.shadertoy.com/view/wdy3DD
-float mapinfinite(vec2 pos,float sp){
+float mapInfinity(vec2 pos, float sp){
     float t = fract(-SPEED * TIME*sp);
     float dl = LENGTH / INTENSITY;
     vec2 p1 = leminiscate(t * M_2_PI);
@@ -140,8 +139,8 @@ float mapinfinite(vec2 pos,float sp){
     return d;
 }
 
-float mapcircle(vec2 pos,float sp){
-    float t = fract(-SPEED * TIME*sp);
+float mapCircle(vec2 pos, float sp){
+    float t = fract(-SPEED * TIME * sp);
     float dl = LENGTH / INTENSITY;
     vec2 p1 = circle(t * M_2_PI);
     vec2 p2 = circle((dl + t) * M_2_PI);
@@ -162,15 +161,15 @@ float mapcircle(vec2 pos,float sp){
 void main() {
     vec2 uv = (2. * gl_FragCoord.xy - RENDERSIZE.xy) / RENDERSIZE.y;
 	
-    float dist1 = mapcircle(uv.yx*vec2(1.0,0.66),1.0);
-	float dist2 = mapinfinite(uv.xy*vec2(0.66,1.0),2.0);
-	float dist3 = mapcircle(uv.xy*vec2(1.0,0.88),4.0);
+    float dist1 = mapCircle(uv.yx * vec2(1.0, 0.66), 1.0);
+	float dist2 = mapInfinity(uv.xy * vec2(0.66, 1.0), 2.0);
+	float dist3 = mapCircle(uv.xy * vec2(1.0, 0.88), 4.0);
     
     vec3 col1 = vec3(1.0, 0.55, 0.25) * pow(RADIUS/dist1, GLOW);
 	vec3 col2 = vec3(0.55, 1.00, 0.25) * pow(RADIUS/dist2, GLOW);
 	vec3 col3 = vec3(0.25, 0.55, 1.00) * pow(RADIUS/dist3, GLOW);
 	
-	vec3 col=(col1+col2+col3)*(2.*GLOW);
+	vec3 col = (col1 + col2 + col3) * (2. * GLOW);
     
     gl_FragColor = vec4(col, 1.0);
 }
