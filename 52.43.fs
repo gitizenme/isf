@@ -7,18 +7,6 @@
     "DESCRIPTION": "Color Ball",
     "INPUTS": [
         {
-            "MAX": [
-                1,
-                1
-            ],
-            "MIN": [
-                -1,
-                -1
-            ],
-            "NAME": "offset",
-            "TYPE": "point2D"
-        },
-        {
             "DEFAULT": 0,
             "MAX": 2,
             "MIN": -2,
@@ -77,17 +65,6 @@
             "LABEL": "baseColor",
             "NAME": "baseColor",
             "TYPE": "color"
-        },
-        {
-            "DEFAULT": [
-                0.5,
-                0.5,
-                0.5,
-                1
-            ],
-            "LABEL": "backgroundColor",
-            "NAME": "backgroundColor",
-            "TYPE": "color"
         }
     ],
     "ISFVSN": "2"
@@ -99,9 +76,9 @@
 #define Radius 1.5
 #define NoiseSteps 4
 #define Color1 baseColor
-#define Color2 vec4(1.0, 0.8, 0.2, 1.0)
-#define Color3 vec4(1.0, 0.03, 0.0, 1.0)
-#define Color4 vec4(0.4, 0.02, 0.02, 1.0)
+#define Color2 shade1
+#define Color3 shade2
+#define Color4 shade3
 
 float maxFreq = 1.5;
 float qWidth = 0.03;
@@ -185,20 +162,37 @@ float SphereDist(vec3 position)
 	return length(position) - Radius;
 }
 
+vec3 hueGradient(float t) {
+    vec3 p = abs(fract(t + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+	return (clamp(p - 1.0, 0.0, 1.0));
+}
+
+vec3 hueGradient(float t, vec3 bc) {
+    vec3 p = abs(fract(t + vec3(bc.r, bc.g / 2.0 / 3.0, bc.b / 1.0 / 3.0)) * 6.0 - 3.0);
+	return (clamp(p - 1.0, 0.0, 1.0));
+}
+
+vec3 techGradient(float t, vec3 bc) {
+	return pow(vec3(t + 0.01), bc * vec3(120.0, 10.0, 180.0));
+}
+
+vec3 fireGradient(float t) {
+	return max(pow(vec3(min(t * 1.02, 1.0)), vec3(1.7, 25.0, 100.0)), 
+			   vec3(0.06 * pow(max(1.0 - abs(t - 0.35), 0.0), 5.0)));
+}
+
+vec3 fireGradient(float t, vec3 bc) {
+	return max(pow(vec3(min(t * 1.02, 1.0)), vec3(bc.r * 1.7, bc.g * 25.0, bc.b * 100.0)), 
+			   vec3(0.06 * pow(max(1.0 - abs(t - 0.35), 0.0), 5.0)));
+}
+
+
+
 vec4 Shade(float distance)
 {
-	// float c1 = saturate(distance * 5.0 + 0.5);
-	// float c2 = saturate(distance * 5.0);
-	// float c3 = saturate(distance * 3.4 - 0.5);
-
-	float sc1 = clamp(distance * 5.0 + 0.5, 0., smoothstep(0.01, 0.08, distance));
-	float sc2 = clamp(distance * 5.0, 0., smoothstep(0.01, 0.08, distance));
-	float sc3 = clamp(distance * 3.4 - 0.5, 0., smoothstep(0.01, 0.08, distance));
-
-	vec4 a = mix(Color1, Color2, sc1);
-	vec4 b = mix(a, Color3, sc2);
-	vec4 c = mix(b, Color4, sc3);
-	return c; 
+	vec4 g = vec4(hueGradient(distance, baseColor.rgb), 1.);
+	// vec4 g = vec4(fireGradient(distance, baseColor.rgb), 1.);
+	return g;
 }
 
 float RenderScene(vec3 position, out float distance)
@@ -247,7 +241,7 @@ void main(void)
 	// p += offset;
 	p.x *= RENDERSIZE.x/RENDERSIZE.y;
 
-	p.xy *= rotate2d(sin(offset.x * TIME) + cos(offset.y * TIME));
+	// p.xy *= rotate2d(sin(offset.x * TIME) + cos(offset.y * TIME));
 
 	float rotx = rotation * 4.0;
 	float roty = -rotation * 4.0;
@@ -257,18 +251,17 @@ void main(void)
 	vec3 uu = normalize(cross( vec3(0.0, 1.0, 0.0), ww));
 	vec3 vv = normalize(cross(ww, uu));
 	vec3 rd = normalize(p.x*uu + p.y*vv + 1.5*ww);
-	vec4 col = vec4(backgroundColor.r, backgroundColor.g, backgroundColor.b, 1.0);
+	vec4 col = vec4(baseColor.rgb, 1.);
 	vec3 origin;
-	vec2 uv = gl_FragCoord.xy / RENDERSIZE.xy;
-	uv *=  1.0 - uv.yx;
-	float vig = uv.x * uv.y * 15.0; // multiply with sth for intensity
-	vig = pow(vig, 0.25); // change pow for modifying the extend of the  vignette
-	col *= vec4(backgroundColor.r, backgroundColor.g, backgroundColor.b, 1.);
-	col *= vig;
-	if(IntersectSphere(ro, rd, vec3(0.0), Radius + depth*7.0, origin))
+	if(IntersectSphere(ro, rd, vec3(0.0), Radius + depth * 14.0, origin))
 	{
 		col = March(origin, rd, col);
 	}
+	vec2 uv = gl_FragCoord.xy / RENDERSIZE.xy;
+	uv *=  1.0 - uv.yx;
+	float vig = uv.x * uv.y * 15.0; // multiply with sth for intensity
+	vig = pow(vig, 0.35); // change pow for modifying the extend of the  vignette
+	col *= vig;
 	
 	gl_FragColor = col;
 }
