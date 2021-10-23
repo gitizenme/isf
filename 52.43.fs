@@ -1,83 +1,111 @@
 /*{
-  "CREDIT": "by ChaosOfZen",
-  "CATEGORIES": [
-    "generator",
-    "ball"
-  ],
-  "INPUTS": [
-    {
-      "NAME": "offset",
-      "TYPE": "point2D",
-      "MAX": [
-        1.0,
-        1.0
-      ],
-      "MIN": [
-        -1.0,
-        -1.0
-      ]
-    },
-    {
-      "NAME": "rotation",
-      "TYPE": "float",
-      "DEFAULT": 0.0,
-      "MIN": -2.0,
-      "MAX": 2.0
-    },
-    {
-      "NAME": "size",
-      "TYPE": "float",
-      "DEFAULT": 3.5,
-      "MIN": 1.0,
-      "MAX": 4.0
-    },
-    {
-      "NAME": "depth",
-      "TYPE": "float",
-      "DEFAULT": 0.1,
-      "MIN": 0.03,
-      "MAX": 0.15
-    },
-    {
-      "NAME": "density",
-      "TYPE": "float",
-      "DEFAULT": 2.5,
-      "MIN": 0.1,
-      "MAX": 4.0
-    },
-    {
-      "NAME": "rateX",
-      "TYPE": "float",
-      "DEFAULT": -3.0,
-      "MIN": -9.0,
-      "MAX": 9.0
-    },
-    {
-      "NAME": "rateY",
-      "TYPE": "float",
-      "DEFAULT": -0.5,
-      "MIN": -9.0,
-      "MAX": 9.0
-    },
-    {
-      "NAME": "rateZ",
-      "TYPE": "float",
-      "DEFAULT": 3.0,
-      "MIN": -9.0,
-      "MAX": 9.0
-    }
-  ],
-  "DESCRIPTION": "Color Ball"
-}*/
+    "CATEGORIES": [
+        "generator",
+        "ball"
+    ],
+    "CREDIT": "by ChaosOfZen",
+    "DESCRIPTION": "Color Ball",
+    "INPUTS": [
+        {
+            "MAX": [
+                1,
+                1
+            ],
+            "MIN": [
+                -1,
+                -1
+            ],
+            "NAME": "offset",
+            "TYPE": "point2D"
+        },
+        {
+            "DEFAULT": 0,
+            "MAX": 2,
+            "MIN": -2,
+            "NAME": "rotation",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 5.5,
+            "MAX": 15,
+            "MIN": 1,
+            "NAME": "size",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.1,
+            "MAX": 0.15,
+            "MIN": 0.03,
+            "NAME": "depth",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 2.5,
+            "MAX": 4,
+            "MIN": 0.1,
+            "NAME": "density",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": -3,
+            "MAX": 9,
+            "MIN": -9,
+            "NAME": "rateX",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": -0.5,
+            "MAX": 9,
+            "MIN": -9,
+            "NAME": "rateY",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 3,
+            "MAX": 9,
+            "MIN": -9,
+            "NAME": "rateZ",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": [
+                1,
+                1,
+                1,
+                1
+            ],
+            "LABEL": "baseColor",
+            "NAME": "baseColor",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0.5,
+                0.5,
+                0.5,
+                1
+            ],
+            "LABEL": "backgroundColor",
+            "NAME": "backgroundColor",
+            "TYPE": "color"
+        }
+    ],
+    "ISFVSN": "2"
+}
+*/
 
 #define saturate(oo) clamp(oo, 0.0, 1.0)
 #define MarchSteps 4
 #define Radius 1.5
 #define NoiseSteps 4
-#define Color1 vec4(1.0, 1.0, 1.0, 1.0)
+#define Color1 baseColor
 #define Color2 vec4(1.0, 0.8, 0.2, 1.0)
 #define Color3 vec4(1.0, 0.03, 0.0, 1.0)
 #define Color4 vec4(0.4, 0.02, 0.02, 1.0)
+
+float maxFreq = 1.5;
+float qWidth = 0.03;
+float minFreq = 0.1;
 
 
 vec3 mod196(vec3 x) { return x - floor(x * (1.0 / 196.0)) * 196.0; }
@@ -159,25 +187,30 @@ float SphereDist(vec3 position)
 
 vec4 Shade(float distance)
 {
-	float c1 = saturate(distance*5.0 + 0.5);
-	float c2 = saturate(distance*5.0);
-	float c3 = saturate(distance*3.4 - 0.5);
-	
-	vec4 a = mix(Color1,Color2, c1);
-	vec4 b = mix(a,     Color3, c2);
-	return 	 mix(b,     Color4, c3);
+	// float c1 = saturate(distance * 5.0 + 0.5);
+	// float c2 = saturate(distance * 5.0);
+	// float c3 = saturate(distance * 3.4 - 0.5);
+
+	float sc1 = clamp(distance * 5.0 + 0.5, 0., smoothstep(0.01, 0.08, distance));
+	float sc2 = clamp(distance * 5.0, 0., smoothstep(0.01, 0.08, distance));
+	float sc3 = clamp(distance * 3.4 - 0.5, 0., smoothstep(0.01, 0.08, distance));
+
+	vec4 a = mix(Color1, Color2, sc1);
+	vec4 b = mix(a, Color3, sc2);
+	vec4 c = mix(b, Color4, sc3);
+	return c; 
 }
 
 float RenderScene(vec3 position, out float distance)
 {
-	float noise = Turbulence(position * density + vec3(rateZ, rateX, rateY)*TIME, 0.1, 1.5, 0.03) * depth;
+	float noise = Turbulence(position * density + vec3(rateZ, rateX, rateY), minFreq, maxFreq, qWidth) * depth;
 	noise = saturate(abs(noise));
 	distance = SphereDist(position) - noise;
 		
 	return noise;
 }
 
-vec4 March(vec3 rayOrigin, vec3 rayStep)
+vec4 March(vec3 rayOrigin, vec3 rayStep, vec4 bgCol)
 {
 	vec3 position = rayOrigin;
 	float distance;
@@ -188,8 +221,8 @@ vec4 March(vec3 rayOrigin, vec3 rayStep)
 		if(distance < 0.05) break;
 		position += rayStep * distance;
 	}
-	
-	return mix(Shade(displacement), vec4(0.0, 0.0, 0.0, 0.0), float(distance >= 0.5));
+
+	return mix(Shade(displacement), bgCol, float(distance >= 0.5));
 }
 
 bool IntersectSphere(vec3 ro, vec3 rd, vec3 pos, float radius, out vec3 intersectPoint)
@@ -203,25 +236,38 @@ bool IntersectSphere(vec3 ro, vec3 rd, vec3 pos, float radius, out vec3 intersec
 	return d >= 0.0;
 }
 
+mat2 rotate2d(float _angle){
+    return mat2(cos(_angle),-sin(_angle),
+                sin(_angle),cos(_angle));
+}
+
 void main(void)
 {
 	vec2 p = (gl_FragCoord.xy / RENDERSIZE.xy) * 2.0 - 1.0;
-	p += offset;
+	// p += offset;
 	p.x *= RENDERSIZE.x/RENDERSIZE.y;
 
-	float rotx = rotation* 4.0;
+	p.xy *= rotate2d(sin(offset.x * TIME) + cos(offset.y * TIME));
+
+	float rotx = rotation * 4.0;
 	float roty = -rotation * 4.0;
-	float zoom = 16.0-(size*3.);
+	float zoom = 10.0 - (size);
 	vec3 ro = zoom * normalize(vec3(cos(roty), cos(rotx), sin(roty)));
 	vec3 ww = normalize(vec3(0.0, 0.0, 0.0) - ro);
 	vec3 uu = normalize(cross( vec3(0.0, 1.0, 0.0), ww));
 	vec3 vv = normalize(cross(ww, uu));
 	vec3 rd = normalize(p.x*uu + p.y*vv + 1.5*ww);
-	vec4 col = vec4(0.0);
+	vec4 col = vec4(backgroundColor.r, backgroundColor.g, backgroundColor.b, 1.0);
 	vec3 origin;
+	vec2 uv = gl_FragCoord.xy / RENDERSIZE.xy;
+	uv *=  1.0 - uv.yx;
+	float vig = uv.x * uv.y * 15.0; // multiply with sth for intensity
+	vig = pow(vig, 0.25); // change pow for modifying the extend of the  vignette
+	col *= vec4(backgroundColor.r, backgroundColor.g, backgroundColor.b, 1.);
+	col *= vig;
 	if(IntersectSphere(ro, rd, vec3(0.0), Radius + depth*7.0, origin))
 	{
-		col = March(origin, rd);
+		col = March(origin, rd, col);
 	}
 	
 	gl_FragColor = col;
