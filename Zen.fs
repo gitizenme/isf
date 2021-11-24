@@ -181,7 +181,7 @@ vec3 time()
     return t;       // return fract(length),period,period phase
 }
 
-float scene(vec2 uv, vec3 t)
+float zen(vec2 uv, vec3 t)
 {
     uv = uv * 2.0 - 1.0;
 
@@ -230,6 +230,10 @@ float scene(vec2 uv, vec3 t)
     }
 
     return d;
+}
+
+float scene(vec2 uv, vec3 t) {
+    return zen(uv, t);
 }
 
 void main() {
