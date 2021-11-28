@@ -9,8 +9,8 @@
     "INPUTS": [
         {
             "DEFAULT": [
-                0,
-                0
+                -231.55,
+                -124.32
             ],
             "MAX": [
                 360,
@@ -59,6 +59,13 @@
             ],
             "NAME": "shapeColor",
             "TYPE": "color"
+        },
+        {
+            "DEFAULT": 0.5,
+            "MAX": 2,
+            "MIN": 0,
+            "NAME": "zoom",
+            "TYPE": "float"
         }
     ],
     "ISFVSN": "2"
@@ -102,17 +109,44 @@ float sdBox2d(vec2 p, vec2 s) {
 	return length(max(p, 0.))+min(max(p.x, p.y), 0.);
 }
 
+float opU( float d1, float d2 )
+{
+    return min( d1, d2 );
+}
+
+float sminCubic( float a, float b, float k )
+{
+    float h = max( k-abs(a-b), 0.0 )/k;
+    return min( a, b ) - h*h*h*k*(1.0/6.0);
+}
+
+int bpm = 60;
+float bbpm = 1. / 4.;  // beats per measure
+float spm = (bbpm * (float(bpm) / 60.)); // seconds per measure
+
+
+
 float GetDist(vec3 p) {
     float r1 = 1.7, r2=.3;
     vec2 cp = vec2(length(p.xz)-r1, p.y);
     float a = atan(p.x, p.z); // polar angle between -pi and pi
-    cp *= Rot(a*2.5+TIME*.5);
+    cp *= Rot(a * 1. + TIME * spm);
     cp.y = abs(cp.y)-.4;
+
+   	// d = length(cp) - .3*(sin(TIME+10.*r2)*.5+.5)-.19;
+
+
+    float d = 0.;
+    float box1 = sdBox2d(cp, vec2(.1, .3 * (sin(2. * a) * .5 + .5)) + .5 * (cos(TIME * 4. * spm) * .5 + .5));
+    d = box1;
+    float box2 = sdBox2d(cp, vec2(.2, .3 * (sin(2. * a) * .5 + .5)) + .5 * (cos(TIME * 4. * spm) * .5 + .5));
+   	d = sminCubic(d, box2, 1.);
+    float box3 = sdBox2d(cp, vec2(.8, .3 * (sin(2. * a) * .5 + .5)) + .5 * (cos(TIME * 4. * spm) * .5 + .5));
+   	d = sminCubic(d, box3, 1.);
+    float box4 = sdBox2d(cp, vec2(.5, .3 * (sin(2. * a) * .5 + .5)) + .5 * (cos(TIME * 4. * spm) * .5 + .5));
+   	d = sminCubic(d, box4, 1.);
     
-    float d = length(cp)-r2;
-   	d = sdBox2d(cp, vec2(.1, .3*(sin(4.*a)*.5+.5)))-.1;
-    
-    return d*.6;
+    return d; // * .8;
 }
 
 float RayMarch(vec3 ro, vec3 rd) {
@@ -165,11 +199,11 @@ void main() {
     
     vec3 col = vec3(0);
     
-    vec3 ro = vec3(0, 0, -5);
+    vec3 ro = vec3(m.x, m.y, 6);
     ro.yz *= Rot(m.y*6.2831);
     ro.xz *= Rot(m.x*6.2831);
     
-    vec3 rd = GetRayDir(uv, ro, vec3(0), 1.);
+    vec3 rd = GetRayDir(uv, ro, vec3(0), zoom);
 	
     col += Bg(rd);
     
@@ -182,10 +216,7 @@ void main() {
         
         float spec = pow(max(0., r.y), specFactor);
         float dif = dot(n, normalize(Bg(r).rgb * 30.))*.5+.5;
-    	// float dif = dot(n, normalize(shapeColor.rgb))*.5+.5;
     	col = mix(Bg(r), vec3(dif) * shapeColor.rgb, clamp(0.2, 0.9, sin(TIME * 0.25))) + spec;
-        // col = mix(Bg(r), shapeColor.rgb, 0.5) + spec;
-        // col = vec3(spec);
     }
     
     col = pow(col, vec3(.4545));	// gamma correction
