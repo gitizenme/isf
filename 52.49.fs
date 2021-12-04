@@ -168,9 +168,9 @@ void main() {
     vec2 uv = (gl_FragCoord.xy-.5*RENDERSIZE.xy)/RENDERSIZE.y;
 	vec2 M = (pos.xy-RENDERSIZE.xy*.5)/RENDERSIZE.y;
     
-    float t = TIME * spm * 0.25;
+    float t = TIME * spm * 0.125;
 
-    // uv += M * 2.; 
+    uv += M; 
     uv *= Rot(t);
     
     vec3 col = vec3(0);
