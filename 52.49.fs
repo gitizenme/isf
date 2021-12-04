@@ -1,5 +1,4 @@
-/*
-{
+/*{
     "CATEGORIES": [
         "Stars",
         "Starfield"
@@ -9,12 +8,28 @@
     },
     "INPUTS": [
         {
+            "DEFAULT": [
+                300,
+                225
+            ],
             "NAME": "pos",
             "TYPE": "point2D"
+        },
+        {
+            "DEFAULT": 0.5,
+            "NAME": "density",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.9,
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "flareFactor",
+            "TYPE": "float"
         }
-    ]
+    ],
+    "ISFVSN": "2"
 }
-
 */
 
 
@@ -24,23 +39,42 @@
 // 
 
 #define NUM_LAYERS 4.
+#define PI 3.1415
 
 mat2 Rot(float a) {
     float s=sin(a), c=cos(a);
     return mat2(c, -s, s, c);
 }
 
-float Star(vec2 uv, float flare) {
+float Star(vec2 uv, float flare, float sizeOfStar) {
 	float d = length(uv);
-    float m = .05/d;
+
+    float m = sizeOfStar/d;
     
-    float rays = max(0., 1.-abs(uv.x*uv.y*1000.));
-    m += rays*flare;
-    uv *= Rot(3.1415/4.);
-    rays = max(0., 1.-abs(uv.x*uv.y*1000.));
-    m += rays*.3*flare;
+    float sizeOfRay = 1000.;
+
+    vec2 uvRot = uv;
+    uvRot *= Rot(TIME * PI / 4. * 0.25);
+    float ray = 1. - abs(uvRot.x * uvRot.y * sizeOfRay);
+
+    float rayBrightness = .6;
+
+    // eliminate negative rays
+    float rays = max(0., ray);
+    m += rays * rayBrightness * flare;
+
+    // second set of rays at 45 degree angle
+    uvRot = uv * Rot(PI / 4.);
+    // uvRot *= Rot(PI / 4.);
+    uvRot *= Rot(TIME * PI / 4. * 0.25);
+    ray = 1. - abs(uvRot.x * uvRot.y * sizeOfRay);
+    rays = max(0., ray);
+
+    rayBrightness = .3;
+    m += rays * rayBrightness * flare;
     
     m *= smoothstep(1., .2, d);
+
     return m;
 }
 
@@ -61,14 +95,20 @@ vec3 StarLayer(vec2 uv) {
             vec2 offs = vec2(x, y);
             
     		float n = Hash21(id+offs); // random between 0 and 1
+            if(n < 1.-density)
+                continue;
+
             float size = fract(n*345.32);
             
-    		float star = Star(gv-offs-vec2(n, fract(n*34.))+.5, smoothstep(.9, 1., size)*.6);
+    		// float star = Star(gv-offs-vec2(n, fract(n*34.))+.5, smoothstep(.9, 1., size)*.6);
+            float flareOn = smoothstep(flareFactor, 1., size)*.6;
+    		float star = Star(gv-offs-vec2(n, fract(n*34.))+.5, flareOn, min(.2, fract(n*34500.32)));
             
             vec3 color = sin(vec3(.2, .3, .9)*fract(n*2345.2)*123.2)*.5+.5;
             color = color*vec3(1,.25,1.+size)+vec3(.2, .2, .1)*2.;
             
-            star *= sin(TIME*3.+n*6.2831)*.5+1.;
+            // star *= sin(TIME*3.+n*6.2831)*.5+1.;
+            star *= sin(n*6.2831)*.5+1.;
             col += star*size*color;
         }
     }
@@ -77,16 +117,14 @@ vec3 StarLayer(vec2 uv) {
 
 void main() {
 
-
-
     vec2 uv = (gl_FragCoord.xy-.5*RENDERSIZE.xy)/RENDERSIZE.y;
 	vec2 M = (pos.xy-RENDERSIZE.xy*.5)/RENDERSIZE.y;
     
     float t = TIME*.02;
     
-    uv += M*4.;
+    uv += M*4.; 
     
-    uv *= Rot(t);
+    // uv *= Rot(t);
     vec3 col = vec3(0);
     
     for(float i=0.; i<1.; i+=1./NUM_LAYERS) {
