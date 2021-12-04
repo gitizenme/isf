@@ -12,11 +12,21 @@
                 300,
                 225
             ],
+            "MAX": [
+                360,
+                360
+            ],
+            "MIN": [
+                -360,
+                -360
+            ],
             "NAME": "pos",
             "TYPE": "point2D"
         },
         {
             "DEFAULT": 0.5,
+            "MAX": 1,
+            "MIN": 0,
             "NAME": "density",
             "TYPE": "float"
         },
@@ -46,6 +56,13 @@
             "MAX": 40,
             "MIN": 0.01,
             "NAME": "scaleMax",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "MAX": 6.14,
+            "MIN": -6.14,
+            "NAME": "rotation",
             "TYPE": "float"
         }
     ],
@@ -171,7 +188,7 @@ void main() {
     float t = TIME * spm * 0.125;
 
     uv += M; 
-    uv *= Rot(t);
+    uv *= Rot(t * rotation);
     
     vec3 col = vec3(0);
     
