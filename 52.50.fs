@@ -33,6 +33,8 @@
         {
             "DEFAULT": 0.375,
             "LABEL": "Skew",
+            "MAX": 1,
+            "MIN": 0,
             "NAME": "Skew",
             "TYPE": "float"
         },
@@ -58,6 +60,46 @@
             "MAX": 1.4,
             "MIN": 0.4,
             "NAME": "Scale",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 1,
+            "LABEL": "Perturb",
+            "MAX": 100,
+            "MIN": 1,
+            "NAME": "Perturb",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 10,
+            "LABEL": "Perturb X",
+            "MAX": 100,
+            "MIN": 1,
+            "NAME": "PerturbX",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 10,
+            "LABEL": "Perturb Y",
+            "MAX": 100,
+            "MIN": 1,
+            "NAME": "PerturbY",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 10,
+            "LABEL": "Perturb Z",
+            "MAX": 100,
+            "MIN": 1,
+            "NAME": "PerturbZ",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.001,
+            "LABEL": "Time",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "Time",
             "TYPE": "float"
         }
     ],
@@ -88,6 +130,8 @@
 	produce a reasonably clean looking, transparent scene... of vacuum filled objects. :)
 
 	// Related shaders:
+    Transparent Cube Field - by Shane
+    https://www.shadertoy.com/view/ll2SRy
 
 	Crowded Cubes 2 - FabriceNeyret2
 	https://www.shadertoy.com/view/ltBSRy
@@ -107,9 +151,8 @@
 
 // Cheap vec3 to vec3 hash. Works well enough, but there are other ways.
 vec3 hash33(vec3 p){ 
-    
     float n = sin(dot(p, vec3(7, 157, 113)));    
-    return fract(vec3(2097152, 262144, 32768)*n); 
+    return fract(vec3(2097152, 762144, 302768)*n); 
 }
 
 int bpm = 60;
@@ -117,16 +160,24 @@ float bbpm = 1. / 4.;  // beats per measure
 float spm = (bbpm * (float(bpm) / 60.)); // seconds per measure
 
 float map(vec3 p){
-	// Creating the repeat cubes, with slightly convex faces. Standard,
-    // flat faced cubes don't capture the light quite as well.
    
     // scale
     p *= Scale;
 
-    float fTime = sin(TIME * spm * 0.125);
-    float perturb = sin(fTime * p.x * 10.) * cos(fTime * p.y * 10.) * sin(fTime * p.z * 10.);
-	p += hash33(floor(p + 2.)) * .2;
-	return length(fract(p) -.5) - 0.25 + perturb * 0.05;
+    // surface change
+    float time = Time;
+    float fTime = sin(TIME * time * Perturb);
+    float pX = PerturbX;
+    float pY = PerturbY;
+    float pZ = PerturbZ;
+    float perturb = sin(fTime * p.x * pX) * sin(fTime * p.y * pY) * sin(fTime * p.z * pZ);
+
+    // grid
+	p += hash33(floor(p + 20.)) * .2;
+
+    // sphere
+    float sphere = length(fract(p) -.5) - 0.25 + perturb * 0.05;
+	return sphere;
 	
 }
 
@@ -150,8 +201,8 @@ void main() {
 	
     // Swivel the unit ray to look around the scene.
 	float cs = cos( TIME * Skew ), si = sin( TIME * Skew );    
-    rd.xz = mat2(cs, si,-si, cs)*rd.xz;
-    rd.xy = mat2(cs, si,-si, cs)*rd.xy;
+    rd.xz = mat2(cs, si, -si, cs)*rd.xz;
+    rd.xy = mat2(cs, si, -si, cs)*rd.xy;
     
     // Unit ray jitter is another way to hide artifacts. It can also trick the viewer into believing
     // something hard core, like global illumination, is happening. :)
@@ -169,7 +220,7 @@ void main() {
 	for(int i=0; i < 256; i++)	{
         
         // Break conditions. Anything that can help you bail early usually increases frame rate.
-        if(layers > 15. || col.x > 0.6 || t>10.) break;
+        if(layers > 30. || col.x > 0.8 || t > 20.) break;
         
         // Current ray postion. Slightly redundant here, but sometimes you may wish to reuse
         // it during the accumulation stage.
