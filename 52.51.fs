@@ -11,24 +11,24 @@
         {
             "DEFAULT": -10,
             "LABEL": "Scale",
-            "MAX": 0,
-            "MIN": -100,
+            "MAX": -2,
+            "MIN": -20,
             "NAME": "Scale",
             "TYPE": "float"
         },
         {
             "DEFAULT": [
-                0.0,
-                2
+                0,
+                0
             ],
             "LABEL": "PosXY",
             "MAX": [
-                10,
-                2
+                100,
+                100
             ],
             "MIN": [
-                0.0,
-                0.0
+                0,
+                0
             ],
             "NAME": "PosXY",
             "TYPE": "point2D"
@@ -40,6 +40,71 @@
             "MIN": 0,
             "NAME": "Bump",
             "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.125,
+            "LABEL": "tScale",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "tScale",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.83,
+            "LABEL": "ShadeMult",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "ShadeMult",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.17,
+            "LABEL": "ShadeAdd",
+            "MAX": 1,
+            "MIN": 0,
+            "NAME": "ShadeAdd",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0.17,
+            "LABEL": "Vignette",
+            "MAX": 2,
+            "MIN": 0,
+            "NAME": "Vignette",
+            "TYPE": "float"
+        },
+        {
+            "DEFAULT": [
+                0.5,
+                0.2,
+                0.9,
+                1
+            ],
+            "LABEL": "SpecColor",
+            "NAME": "SpecColor",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0.1,
+                0.3,
+                0.9,
+                1
+            ],
+            "LABEL": "FreColor",
+            "NAME": "FreColor",
+            "TYPE": "color"
+        },
+        {
+            "DEFAULT": [
+                0.15,
+                0.15,
+                0.15,
+                1
+            ],
+            "LABEL": "Color",
+            "NAME": "Color",
+            "TYPE": "color"
         }
     ],
     "ISFVSN": "2"
@@ -101,11 +166,17 @@
 
 
 // Standard 2D rotation formula.
-mat2 rot2(in float a){ float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
+mat2 rot2(in float a)
+{ 
+    float c = cos(a), s = sin(a); 
+    return mat2(c, -s, s, c); 
+}
 
 
 // IQ's vec2 to float hash.
-float hash21(vec2 p){  return fract(sin(dot(p, vec2(27.619, 57.583)))*43758.5453); }
+float hash21(vec2 p) {  
+    return fract(sin(dot(p, vec2(27.619, 57.583)))*43758.5453); 
+}
 
 
 vec2 cellID; // Individual Voronoi cell IDs.
@@ -150,11 +221,16 @@ float fBm(vec2 p) {
 }
 
 
-float Map(vec2 p) {
+float Map(vec2 p, float tBPM) {
     
+
     // Put the grid on an angle to interact with the light a little better.
-    p *= rot2(-3.14159/5.);
-   
+    p *= rot2(-3.14159/5. * tBPM);
+
+    // p.x += sin(PosXY.x * TIME) * cos(PosXY.y * TIME);
+    // p.y += sin(PosXY.y * TIME);
+
+
     #ifdef OFFSET_ROW
     // Tacky way to construct an offset square grid.
     if(mod(floor(p.y), 2.)<.5) p.x += .5;
@@ -173,10 +249,10 @@ float Map(vec2 p) {
     
     // Noise function. I've rotated the point around a bit so that the 
     // objects hang down due to gravity at the zero mark.
-    float ang = -3.14159*3./5. + (fBm(ip/8. + TIME/3.))*6.2831*2.;
+    float ang = -3.14159 * 3. / 5. + (fBm(ip / 8. + TIME / 3.)) * 6.2831 * 2.;
     // Offset point within the cell. You could increase this to cell edges
     // (.5), but it starts to look a little weird at that point.
-    vec2 offs = vec2(cos(ang), sin(ang))*.35;
+    vec2 offs = vec2(cos(ang), sin(ang)) * .35;
      
     // Linear pyramid shading, according to the offset point. Basically, you
     // want a value of zero at the edges and a linear increase to one at the 
@@ -195,24 +271,24 @@ float Map(vec2 p) {
 
 // Standard function-based bump mapping function, with an edge value 
 // included for good measure.
-vec3 doBumpMap(in vec2 p, in vec3 n, float bumpfactor, inout float edge){
+vec3 doBumpMap(in vec2 p, in vec3 n, float bumpfactor, inout float edge, float tBPM){
     
     // Sample difference. Usually, you'd have different ones for the gradient
     // and the edges, but we're finding a happy medium to save cycles.
     vec2 e = vec2(.025, 0);
     
-    float f = Map(p); // Bump function sample.
-    float fx = Map(p - e.xy); // Same for the nearby sample in the X-direction.
-    float fy = Map(p - e.yx); // Same for the nearby sample in the Y-direction.
-    float fx2 = Map(p + e.xy); // Same for the nearby sample in the X-direction.
-    float fy2 = Map(p + e.yx); // Same for the nearby sample in the Y-direction.
+    float f = Map(p, tBPM); // Bump function sample.
+    float fx = Map(p - e.xy, tBPM); // Same for the nearby sample in the X-direction.
+    float fy = Map(p - e.yx, tBPM); // Same for the nearby sample in the Y-direction.
+    float fx2 = Map(p + e.xy, tBPM); // Same for the nearby sample in the X-direction.
+    float fy2 = Map(p + e.yx, tBPM); // Same for the nearby sample in the Y-direction.
     
     vec3 grad = (vec3(fx - fx2, fy - fx2, 0))/e.x/2.;   
     
     // Edge value: There's probably all kinds of ways to do it, but this will do.
     edge = length(vec2(fx, fy) + vec2(fx2, fy2) - f*2.);
-    //edge = (fx + fy + fx2 + fy2 - f*4.);
-    //edge = abs(fx + fx2 - f*2.) + abs(fy + fy2 - f*2.);
+    // edge = (fx + fy + fx2 + fy2 - f*4.);
+    // edge = abs(fx + fx2 - f*2.) + abs(fy + fy2 - f*2.);
     //edge /= e.x;
     edge = smoothstep(0., 1., edge/e.x);
      
@@ -246,7 +322,7 @@ int bpm = 60;
 float bbpm = 1. / 4.;  // beats per measure
 float spm = (bbpm * (float(bpm) / 60.)); // seconds per measure
 
-float tBPM = (spm / 0.125);
+float tBPM = (spm / tScale);
 
 void main() {
 
@@ -261,10 +337,10 @@ void main() {
     float gSc = Scale;
     vec2 p = uv * gSc + vec2(sin(TIME/tBPM), cos(TIME/tBPM)) * 4.;
     vec2 oP = p; // Saving a copy for later.
-    
+
     
     // Take a function sample.
-    float m = Map(p);
+    float m = Map(p, tBPM);
     
     vec2 svID = cellID;
   
@@ -273,59 +349,61 @@ void main() {
     
     // Bump mapping the normal and obtaining an edge value.
     float edge = 0., bumpFactor = Bump;
-    n = doBumpMap(p, n, bumpFactor, edge);
+    n = doBumpMap(p, n, bumpFactor, edge, tBPM);
    
     // Light postion, sitting back from the plane and animated slightly.
-	// vec3 lp =  vec3(-0. + sin(TIME)*.3, .0 + cos(TIME*1.3)*.3, -1) - vec3(uv, 0);
+	vec3 lp =  vec3(-0. + sin(PosXY.x)*1.3, .0 + cos(PosXY.y*1.3)*.3, -1) - vec3(uv, 0);
     
     // Liight distance and normalizing.
-    // float lDist = max(length(lp), .001);
-    // vec3 ld = lp/lDist;
+    float lDist = max(length(lp), .001);
+    vec3 ld = lp/lDist;
     // Unidirectional lighting -- Sometimes, it looks nicer.
-    vec3 ld = normalize(vec3(-.3 + sin(TIME * tBPM) *.3, .5 + cos(TIME * tBPM) * .2, -1));
+    // vec3 ld = normalize(vec3(-.3 + sin(TIME * tBPM) *.3, .5 + cos(TIME * tBPM) * .2, -1));
 	
 	// Diffuse, specular and Fresnel.
-	float diff = max(dot(n, ld), 0.);
+	float diff = max(dot(n, ld), 0.) * Vignette;
     diff = pow(diff, 4.);
     float spec = pow(max(dot(reflect(-ld, n), -rd), 0.), 16.);
 	// Fresnel term. Good for giving a surface a bit of a reflective glow.
     float fre = min(pow(max(1. + dot(n, rd), 0.), 4.), 3.);
     
     // Applying the lighting.
-    vec3 col = vec3(.15)*(diff + .251 + spec*vec3(1, .7, .3)*9. + fre*vec3(.1, .3, 1)*12.);
-    
+    vec3 col = Color.rgb * (diff + .251 + spec * SpecColor.rgb * 9. + fre * FreColor.rgb * 12.);
+     
     
     // Some dodgy fake reflections. This was made up on the fly. It's no sustitute for reflecting
     // into a proper back scene, but it's only here to add some subtle red colors.
-    float rf = smoothstep(0., .35, Map(reflect(rd, n).xy*2.)*fBm(reflect(rd, n).xy*3.) + .1);
+    float rf = smoothstep(0., .35, Map(reflect(rd, n).xy*2., tBPM)*fBm(reflect(rd, n).xy*3.) + .1);
     col += col * col * rf * rf * vec3(1, .1, .1) * 15.;
     
     // Random blinking lights. Needs work. :)
-    float rnd = hash21(svID);
-    float rnd2 = hash21(svID + .7);
-    // rnd = sin(rnd*6.2831 + TIME*1.);
-    col *= mix(vec3(1), (.5 + .4 * cos(6.2831 * rnd2 + vec3(1, 1, 2)))*6., smoothstep(.1, .99, rnd));
+    // float rnd = hash21(svID);
+    // float rnd2 = hash21(svID + .7);
+    // rnd = sin(rnd * 6.2831 + TIME * tBPM);
+    // vec3 colorMix = (.5 + .4 * cos(6.2831 * rnd2 + vec3(1, 1, 2))) * 6.;
+    // vec3 colorMix = (.5 + .4 * cos(6.2831 * rnd2 + vec3(0, 0, 0))) * 6.;
+    // col *= mix(Color.rgb, colorMix, smoothstep(.5, .99, rnd));
     
      // Using the distance function value for some faux shading.
-    float shade = m * .83 + .17;
+    float shade = m * ShadeMult + ShadeAdd;
     col *= shade;
     
     // Apply the edging from the bump function. In some situations, this can add an
     // extra touch of dimension. It's so easy to apply that I'm not sure why people 
     // don't use it more. Bump mapped edging works in 3D as well.
-    col *= 1. - edge * .8;
+    // col *= 1. - edge * .8;
     
     // Apply a cheap but effective hatch function.
-    float hatch = doHatch(oP/gSc, iRes);
-    col *= hatch * .5 + .7;
+    // float hatch = doHatch(oP/gSc, iRes);
+    // col *= hatch * .5 + .7;
     
     // Just the distance function.
     //col = vec3(m);
    
   
     // Subtle vignette.
-    // uv = gl_FragCoord.xy/RENDERSIZE.xy;
-    // col *= pow(16.*uv.x*uv.y*(1. - uv.x)*(1. - uv.y) , .125);
+    vec2 uvV = gl_FragCoord.xy/RENDERSIZE.xy;
+    col *= pow(16. * uvV.x * uvV.y * (1. - uvV.x) * (1. - uvV.y), Vignette);
     // Colored variation.
     // col = mix(col*vec3(.25, .5, 1)/8., col, pow(16.*uv.x*uv.y*(1. - uv.x)*(1. - uv.y) , .125));
     
