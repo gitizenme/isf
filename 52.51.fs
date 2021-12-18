@@ -23,12 +23,12 @@
             ],
             "LABEL": "PosXY",
             "MAX": [
-                100,
-                100
+                2,
+                2
             ],
             "MIN": [
-                0,
-                0
+                -2,
+                -2
             ],
             "NAME": "PosXY",
             "TYPE": "point2D"
@@ -36,7 +36,7 @@
         {
             "DEFAULT": 0.25,
             "LABEL": "Bump",
-            "MAX": 1,
+            "MAX": 0.5,
             "MIN": 0,
             "NAME": "Bump",
             "TYPE": "float"
@@ -68,7 +68,7 @@
         {
             "DEFAULT": 0.17,
             "LABEL": "Vignette",
-            "MAX": 2,
+            "MAX": 1,
             "MIN": 0,
             "NAME": "Vignette",
             "TYPE": "float"
@@ -163,7 +163,8 @@
 // Offsetting alternate rows -- I feel it distributes the effect more,
 // but if you prefer more order, comment out the following:
 #define OFFSET_ROW
-
+#define PI 3.14159
+#define TWO_PI 6.2831
 
 // Standard 2D rotation formula.
 mat2 rot2(in float a)
@@ -225,16 +226,12 @@ float Map(vec2 p, float tBPM) {
     
 
     // Put the grid on an angle to interact with the light a little better.
-    p *= rot2(-3.14159/5. * tBPM);
+    p *= rot2(-PI/5. * tBPM);
 
-    // p.x += sin(PosXY.x * TIME) * cos(PosXY.y * TIME);
-    // p.y += sin(PosXY.y * TIME);
-
-
-    #ifdef OFFSET_ROW
     // Tacky way to construct an offset square grid.
-    if(mod(floor(p.y), 2.)<.5) p.x += .5;
-    #endif
+    if(mod(floor(p.y), 2.) < .5) {
+        p.x += .5;
+    }
 
     
     // Cell ID and local coordinates.
@@ -245,11 +242,12 @@ float Map(vec2 p, float tBPM) {
     cellID = ip;
 
     // Transcendental angle function... Made up on the spot.
-    //float ang = dot(sin(ip/4. - cos(ip.yx/2. + TIME))*6.2831, vec2(.5));
+    //float ang = dot(sin(ip/4. - cos(ip.yx/2. + TIME))*TWO_PI, vec2(.5));
     
     // Noise function. I've rotated the point around a bit so that the 
     // objects hang down due to gravity at the zero mark.
-    float ang = -3.14159 * 3. / 5. + (fBm(ip / 8. + TIME / 3.)) * 6.2831 * 2.;
+    // float ang = -PI * 3. / 5. + (fBm(ip / 8. + TIME / 3.)) * TWO_PI * 2.;
+    float ang = -PI * 3. / 5. + (fBm(ip / 8. + TIME / tBPM)) * TWO_PI * 2.;
     // Offset point within the cell. You could increase this to cell edges
     // (.5), but it starts to look a little weird at that point.
     vec2 offs = vec2(cos(ang), sin(ang)) * .35;
@@ -308,7 +306,7 @@ float doHatch(vec2 p, float res){
     p *= res/16.;
 
     // Random looking diagonal hatch lines.
-    float hatch = clamp(sin((p.x - p.y)*3.14159*200.)*2. + .5, 0., 1.); // Diagonal lines.
+    float hatch = clamp(sin((p.x - p.y) * PI * 200.) * 2. + .5, 0., 1.); // Diagonal lines.
 
     // Slight randomization of the diagonal lines, but the trick is to do it with
     // tiny squares instead of pixels.
@@ -318,7 +316,7 @@ float doHatch(vec2 p, float res){
     return hatch;
 }
 
-int bpm = 60;
+int bpm = 135;
 float bbpm = 1. / 4.;  // beats per measure
 float spm = (bbpm * (float(bpm) / 60.)); // seconds per measure
 
@@ -335,7 +333,7 @@ void main() {
     
     // Scaling and tranlation.
     float gSc = Scale;
-    vec2 p = uv * gSc + vec2(sin(TIME/tBPM), cos(TIME/tBPM)) * 4.;
+    vec2 p = uv * gSc + vec2(sin(TIME / tBPM), cos(TIME / tBPM)) * tScale;
     vec2 oP = p; // Saving a copy for later.
 
     
@@ -352,13 +350,11 @@ void main() {
     n = doBumpMap(p, n, bumpFactor, edge, tBPM);
    
     // Light postion, sitting back from the plane and animated slightly.
-	vec3 lp =  vec3(-0. + sin(PosXY.x)*1.3, .0 + cos(PosXY.y*1.3)*.3, -1) - vec3(uv, 0);
+	vec3 lp =  vec3(-0. + sin(PosXY.x), .0 + cos(PosXY.y * 1.3), -1) - vec3(uv, 0);
     
     // Liight distance and normalizing.
     float lDist = max(length(lp), .001);
     vec3 ld = lp/lDist;
-    // Unidirectional lighting -- Sometimes, it looks nicer.
-    // vec3 ld = normalize(vec3(-.3 + sin(TIME * tBPM) *.3, .5 + cos(TIME * tBPM) * .2, -1));
 	
 	// Diffuse, specular and Fresnel.
 	float diff = max(dot(n, ld), 0.) * Vignette;
@@ -368,22 +364,11 @@ void main() {
     float fre = min(pow(max(1. + dot(n, rd), 0.), 4.), 3.);
     
     // Applying the lighting.
-    vec3 col = Color.rgb * (diff + .251 + spec * SpecColor.rgb * 9. + fre * FreColor.rgb * 12.);
-     
+    vec3 col = Color.rgb * (diff + .251 + spec * SpecColor.rgb * 9. + fre * FreColor.rgb * 12.);     
     
-    // Some dodgy fake reflections. This was made up on the fly. It's no sustitute for reflecting
-    // into a proper back scene, but it's only here to add some subtle red colors.
-    float rf = smoothstep(0., .35, Map(reflect(rd, n).xy*2., tBPM)*fBm(reflect(rd, n).xy*3.) + .1);
-    col += col * col * rf * rf * vec3(1, .1, .1) * 15.;
-    
-    // Random blinking lights. Needs work. :)
-    // float rnd = hash21(svID);
-    // float rnd2 = hash21(svID + .7);
-    // rnd = sin(rnd * 6.2831 + TIME * tBPM);
-    // vec3 colorMix = (.5 + .4 * cos(6.2831 * rnd2 + vec3(1, 1, 2))) * 6.;
-    // vec3 colorMix = (.5 + .4 * cos(6.2831 * rnd2 + vec3(0, 0, 0))) * 6.;
-    // col *= mix(Color.rgb, colorMix, smoothstep(.5, .99, rnd));
-    
+    float rf = smoothstep(0., 1., Map(reflect(rd, n).xy * 2., tBPM) * fBm(reflect(rd, n).xy * 3.) + 0.3);
+    col += col * col * rf * rf * Color.rgb * 15.;
+        
      // Using the distance function value for some faux shading.
     float shade = m * ShadeMult + ShadeAdd;
     col *= shade;
@@ -403,9 +388,7 @@ void main() {
   
     // Subtle vignette.
     vec2 uvV = gl_FragCoord.xy/RENDERSIZE.xy;
-    col *= pow(16. * uvV.x * uvV.y * (1. - uvV.x) * (1. - uvV.y), Vignette);
-    // Colored variation.
-    // col = mix(col*vec3(.25, .5, 1)/8., col, pow(16.*uv.x*uv.y*(1. - uv.x)*(1. - uv.y) , .125));
+    col = mix(col * vec3(.25, .5, 1) / 8., col, pow(16. * uvV.x * uvV.y * (1. - uvV.x) * (1. - uvV.y), Vignette));
     
 	gl_FragColor = vec4(sqrt(max(col, 0.)), 1);
 }
